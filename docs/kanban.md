@@ -8,6 +8,20 @@ The native Pi harness is always the operational home for pi-crew. Kanban is an o
 2. Run `/crew kban`. Pi opens a browser and also prints the private URL.
 3. Ask the main agent to break your request into scopes, assign each task, define its acceptance rubric, and release the work.
 
+### Board templates and day/night theme
+
+The board ships with five visual templates; **Mission Control** is the default. Run `/crew kban template` to pick one from a list (or `/crew kban template 3`, `/crew kban template terminal`). The choice is saved globally in `~/.pi/agent/kanban/ui.json` and an open board switches live. Every template has a day and a night theme; use the sun/moon button in the board header (remembered per browser).
+
+| # | Template | Character |
+|---|---|---|
+| 1 | Mission Control | Dense dashboard with a KPI strip (tasks in flight, awaiting approval, average score, pass rate) |
+| 2 | Calm Light | Minimal, soft surfaces, indigo accent |
+| 3 | Glass Aurora | Frosted glass over an aurora gradient (static with reduced motion) |
+| 4 | Pipeline List | Stages stacked as full-width lanes |
+| 5 | Terminal Pro | Monospace terminal look with a KPI strip |
+
+Tasks waiting for you show a **Yes** / **No** approval box on the card and in the task window; evaluations show colour-coded score sliders with per-criterion tooltips.
+
 To switch back to direct native-agent management, turn only **Kanban** off in Settings. `/crew on` and `/crew off` instead control the **entire pi-crew extension**, independently of Kanban. Master off withdraws all pi-crew tools, workflow prompts and live UI, stops active/queued agents and workflows plus scheduling, and disconnects routing/RPC while retaining records, sessions and evidence. Master on restores the saved feature preferences but never restarts interrupted runs. The project `extensionEnabled` flag is persisted; a save failure explicitly warns that the change is session-only. `/crew on`, `/crew status` and `/crew version` remain usable while the extension is off.
 
 You can also set `"kanbanEnabled": true` in project or personal `subagents.json` and reload Pi. The setting controls the entire Kanban workflow, not only the web interface. Disabling it withdraws the orchestrator tool and its prompt guidance, suppresses board notifications and new task dispatch, and closes the local server. Existing workers retain their bindings and can drain their current checkpoint safely; their evidence is preserved, but follow-on roles do not dispatch while off. An idle disabled controller does not read the board. Re-enabling restores the tool and eligible dispatch without duplicating workers or restarting user-paused, suspended, cancelled or archived work. A trusted project is required for task-service activation.

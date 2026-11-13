@@ -311,6 +311,20 @@ Kanban is a separate preference: use **Kanban** in `/crew` -> Settings (or set `
 /crew kban
 ```
 
+### Board templates and day/night theme
+
+The board ships with five visual templates; **Mission Control** is the default. Run `/crew kban template` to pick one from a list (or `/crew kban template 3`, `/crew kban template terminal`). The choice is saved globally in `~/.pi/agent/kanban/ui.json` and an open board switches live. Every template has a day and a night theme; use the sun/moon button in the board header (remembered per browser).
+
+| # | Template | Character |
+|---|---|---|
+| 1 | Mission Control | Dense dashboard with a KPI strip (tasks in flight, awaiting approval, average score, pass rate) |
+| 2 | Calm Light | Minimal, soft surfaces, indigo accent |
+| 3 | Glass Aurora | Frosted glass over an aurora gradient (static with reduced motion) |
+| 4 | Pipeline List | Stages stacked as full-width lanes |
+| 5 | Terminal Pro | Monospace terminal look with a KPI strip |
+
+Tasks waiting for you show a **Yes** / **No** approval box on the card and in the task window; evaluations show colour-coded score sliders with per-criterion tooltips.
+
 The browser board shows **backlog**, **ready**, **in progress**, **review**, and **done**, with live updates. The orchestrator immediately completes each task's scope, assignment, best practices and weighted rubric. Fully specified `Kanban create` calls release directly to Ready and start native dispatch. Unless you request agents, three independent `operate` sessions handle operator, tester and reviewer roles. Use `holdInBacklog: true` only for an explicit user-requested hold, and report the task ID, reason and release action. Required launch approvals remain binding. Separate tester and reviewer sessions evaluate the submitted work; the orchestrator independently scores it before completion. Every role must score at least **85%**, and real passing test-command evidence is required. A lower score returns actionable fix comments to the operator.
 
 Use **Add task** to submit a scoped item for immediate orchestrator preparation and Ready release in the same turn; new tasks must not be left in Backlog unless you explicitly request a hold. Workers still cannot delegate, and paused or terminal tasks never auto-resume. **Live Harness Runs** also shows ordinary native agents/workflows in the current Pi session. **Pause run** and **Pause all work** explicitly cancel current runs; pause-all also holds pending tasks and stops local scheduling. Native equivalents are `/crew tasks pause <run-id>` and `/crew tasks pause-all`. Resume work deliberately; turning the interface back on does not resume paused items.

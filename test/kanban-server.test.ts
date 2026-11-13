@@ -48,6 +48,14 @@ describe("loopback-only authenticated Kanban web server", () => {
     expect(snapshot.activity).toEqual(board.activity);
     abort.abort(); await reader.cancel().catch(() => {});
   });
+  it("includes the selected template in board snapshots", async () => {
+    await server.close(); server = await startKanbanServer(controller, { template: () => "terminal" });
+    const url = new URL(server.url); origin = url.origin; headers.Authorization = "Bearer " + url.hash.slice(1);
+    expect((await (await fetch(origin + "/api/board", { headers })).json()).template).toBe("terminal");
+  });
+  it("defaults the board template to mission-control", async () => {
+    expect((await (await fetch(origin + "/api/board", { headers })).json()).template).toBe("mission-control");
+  });
   it("validates board Yes/No approval answers", async () => {
     const task = store.create(input, "orchestrator");
     expect((await post({ action: "respond-approval", id: task.id, decision: "maybe", expectedUpdatedAt: task.updatedAt })).status).toBe(400);

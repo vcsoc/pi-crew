@@ -4,17 +4,19 @@ import { createServer, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { KanbanController } from "./controller.js";
 import { type NewTask, text } from "./store.js";
+import { DEFAULT_KANBAN_TEMPLATE } from "./templates.js";
 import { KANBAN_HTML, KANBAN_SCRIPT } from "./web.js";
 
 export interface KanbanWebServer { url: string; close: () => Promise<void> }
 export interface ReadOnlyKanbanSource { readOnly: true; view: KanbanController["view"] }
-export async function startKanbanServer(controller: KanbanController | ReadOnlyKanbanSource): Promise<KanbanWebServer> {
+export interface KanbanServerOptions { /** Current visual template id; read on every snapshot so changes stream live. */ template?: () => string }
+export async function startKanbanServer(controller: KanbanController | ReadOnlyKanbanSource, options: KanbanServerOptions = {}): Promise<KanbanWebServer> {
   const token = randomBytes(32).toString("hex");
   // Both source and compiled entrypoints resolve the packaged, licensed source asset.
   const font = readFileSync(new URL("../../src/kanban/static/JetBrainsMono-Regular.woff2", import.meta.url));
   const listeners = new Set<ServerResponse>();
   let origin = "", previous = "";
-  const boardSnapshot = () => controller.view();
+  const boardSnapshot = () => ({ ...controller.view(), template: options.template?.() ?? DEFAULT_KANBAN_TEMPLATE });
   const snapshot = () => JSON.stringify(boardSnapshot());
   const send = (res: ServerResponse, status: number, data: unknown) => {
     res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" }); res.end(JSON.stringify(data));

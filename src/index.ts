@@ -33,6 +33,7 @@ import { GroupJoinManager } from "./group-join.js";
 import { isolationParam, resolveAgentInvocationConfig, resolveJoinMode } from "./invocation-config.js";
 import { KANBAN_GUIDELINES, KanbanController } from "./kanban/controller.js";
 import { type KanbanWebServer, startKanbanServer } from "./kanban/server.js";
+import { KANBAN_TEMPLATES, type KanbanTemplateId, readKanbanTemplate, resolveKanbanTemplate, writeKanbanTemplate } from "./kanban/templates.js";
 import { KanbanStore } from "./kanban/store.js";
 import { describeMention, handleBase, isReservedHandle, parseMention, resolveHandleToType, stripAgentPrefix } from "./mention.js";
 import { runMentionClone } from "./mention-clone.js";
@@ -4598,13 +4599,33 @@ Write the file using the write tool. Only write the file, nothing else.`;
         } catch (e) { ctx.ui.notify(e instanceof Error ? e.message : String(e), "error"); }
         return;
       }
+      if (/^kban\s+template\b/.test(args.trim())) {
+        const kanbanRoot = join(getAgentDir(), "kanban");
+        const current = readKanbanTemplate(kanbanRoot);
+        const requested = args.trim().replace(/^kban\s+template\b/, "").trim();
+        let chosen: KanbanTemplateId | undefined;
+        if (requested) {
+          chosen = resolveKanbanTemplate(requested);
+          if (!chosen) { ctx.ui.notify(`Unknown template "${requested}". Choose: ${KANBAN_TEMPLATES.map((t, i) => `${i + 1}. ${t.id}`).join(", ")}`, "error"); return; }
+        } else {
+          const labels = KANBAN_TEMPLATES.map((t, i) => `${i + 1}. ${t.name}${t.id === current ? " (current)" : ""} - ${t.description}`);
+          const picked = await ctx.ui.select("Kanban board template (day/night toggle stays on the board)", labels);
+          if (!picked) return;
+          chosen = KANBAN_TEMPLATES[labels.indexOf(picked)]?.id;
+          if (!chosen) return;
+        }
+        try { writeKanbanTemplate(kanbanRoot, chosen); } catch (e) { ctx.ui.notify(e instanceof Error ? e.message : String(e), "error"); return; }
+        const name = KANBAN_TEMPLATES.find(t => t.id === chosen)!.name;
+        ctx.ui.notify(`Kanban template set to ${name}.${kanbanWeb ? " The open board updates automatically." : " Open it with /crew kban."}`, "info");
+        return;
+      }
       if (args.trim() !== "kban") { await showAgentsMenu(ctx); return; }
       try {
         if (!kanbanEnabled) { ctx.ui.notify("Kanban is off. Manage agents directly in /crew, or enable Kanban in /crew > Settings.", "info"); return; }
         const controller = ensureKanban(ctx);
         if (!kanbanWeb) {
           const generation = kanbanWebGeneration;
-          const opened = await startKanbanServer(controller);
+          const opened = await startKanbanServer(controller, { template: () => readKanbanTemplate(join(getAgentDir(), "kanban")) });
           if (!extensionEnabled || !kanbanEnabled || generation !== kanbanWebGeneration) { await opened.close(); return; }
           if (kanbanWeb) await opened.close();
           else kanbanWeb = opened;

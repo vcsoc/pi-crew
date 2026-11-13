@@ -16,7 +16,7 @@ describe("Kanban setting and root wiring", () => {
   it("wires the toggle, complete snapshot, kban command, and lifecycle cleanup", () => {
     const source = readFileSync(fileURLToPath(new URL("../src/index.ts", import.meta.url)), "utf8");
     expect(source).toContain('id: "kanbanEnabled"'); expect(source).toContain("      kanbanEnabled,");
-    expect(source).toContain('args.trim() !== "kban"'); expect(source).toContain("await startKanbanServer(controller)");
+    expect(source).toContain('args.trim() !== "kban"'); expect(source).toContain("await startKanbanServer(controller, { template: () => readKanbanTemplate(join(getAgentDir(), \"kanban\")) })");
     expect(source).toContain("await stopKanban()"); expect(source).toContain("manager.setSpawnGuard");
     expect(source).toContain("if (!ctx.isProjectTrusted())"); expect(source).toContain('pi.on("before_agent_start"');
   });
