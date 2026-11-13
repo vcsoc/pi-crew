@@ -4,8 +4,9 @@ import { createServer, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { KanbanController } from "./controller.js";
 import { type NewTask, text } from "./store.js";
-import { DEFAULT_KANBAN_TEMPLATE } from "./templates.js";
+import { DEFAULT_KANBAN_TEMPLATE, isMissionPageTemplate } from "./templates.js";
 import { KANBAN_HTML, KANBAN_SCRIPT } from "./web.js";
+import { MISSION_HTML, MISSION_SCRIPT } from "./web-mission.js";
 
 export interface KanbanWebServer { url: string; close: () => Promise<void> }
 export interface ReadOnlyKanbanSource { readOnly: true; view: KanbanController["view"] }
@@ -16,7 +17,10 @@ export async function startKanbanServer(controller: KanbanController | ReadOnlyK
   const font = readFileSync(new URL("../../src/kanban/static/JetBrainsMono-Regular.woff2", import.meta.url));
   const listeners = new Set<ServerResponse>();
   let origin = "", previous = "";
-  const boardSnapshot = () => ({ ...controller.view(), template: options.template?.() ?? DEFAULT_KANBAN_TEMPLATE });
+  const currentTemplate = () => options.template?.() ?? DEFAULT_KANBAN_TEMPLATE;
+  // Operations and Mission Control share the mission page (layout set client-side); other templates use the classic page with CSS skins.
+  const page = () => isMissionPageTemplate(currentTemplate()) ? { html: MISSION_HTML, script: MISSION_SCRIPT } : { html: KANBAN_HTML, script: KANBAN_SCRIPT };
+  const boardSnapshot = () => ({ ...controller.view(), template: currentTemplate() });
   const snapshot = () => JSON.stringify(boardSnapshot());
   const send = (res: ServerResponse, status: number, data: unknown) => {
     res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" }); res.end(JSON.stringify(data));
@@ -28,8 +32,8 @@ export async function startKanbanServer(controller: KanbanController | ReadOnlyK
     let url: URL;
     try { url = new URL(req.url ?? "/", origin || "http://127.0.0.1"); } catch { send(res, 400, { error: "Invalid request URL" }); return; }
     if (req.headers.host !== new URL(origin).host || (req.headers.origin && req.headers.origin !== origin)) { send(res, 403, { error: "Local same-origin requests only" }); return; }
-    if (req.method === "GET" && url.pathname === "/") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }); res.end(KANBAN_HTML); return; }
-    if (req.method === "GET" && url.pathname === "/app.js") { res.writeHead(200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" }); res.end(KANBAN_SCRIPT); return; }
+    if (req.method === "GET" && url.pathname === "/") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }); res.end(page().html); return; }
+    if (req.method === "GET" && url.pathname === "/app.js") { res.writeHead(200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" }); res.end(page().script); return; }
     if (req.method === "GET" && url.pathname === "/fonts/JetBrainsMono-Regular.woff2") {
       res.writeHead(200, { "Content-Type": "font/woff2", "Cache-Control": "public, max-age=86400" });
       res.end(font); return;

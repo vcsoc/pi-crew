@@ -53,8 +53,8 @@ describe("loopback-only authenticated Kanban web server", () => {
     const url = new URL(server.url); origin = url.origin; headers.Authorization = "Bearer " + url.hash.slice(1);
     expect((await (await fetch(origin + "/api/board", { headers })).json()).template).toBe("terminal");
   });
-  it("defaults the board template to mission-control", async () => {
-    expect((await (await fetch(origin + "/api/board", { headers })).json()).template).toBe("mission-control");
+  it("defaults the board template to operations", async () => {
+    expect((await (await fetch(origin + "/api/board", { headers })).json()).template).toBe("operations");
   });
   it("validates board Yes/No approval answers", async () => {
     const task = store.create(input, "orchestrator");

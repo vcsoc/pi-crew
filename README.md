@@ -313,15 +313,18 @@ Kanban is a separate preference: use **Kanban** in `/crew` -> Settings (or set `
 
 ### Board templates and day/night theme
 
-The board ships with five visual templates; **Mission Control** is the default. Run `/crew kban template` to pick one from a list (or `/crew kban template 3`, `/crew kban template terminal`). The choice is saved globally in `~/.pi/agent/kanban/ui.json` and an open board switches live. Every template has a day and a night theme; use the sun/moon button in the board header (remembered per browser).
+The board ships with six visual templates; **Operations** is the default. Run `/crew kban template` to pick one from a list (or `/crew kban template 3`, `/crew kban template terminal`). The choice is saved globally in `~/.pi/agent/kanban/ui.json` (an existing `mission-control` choice keeps working) and an open board switches live: Operations and Mission Control share one page and flip layout without reloading, while switching to or from the other templates reloads the page. Every template has a day and a night theme; use the sun/moon button in the board header (remembered per browser).
 
 | # | Template | Character |
 |---|---|---|
-| 1 | Mission Control | Dense dashboard with a KPI strip (tasks in flight, awaiting approval, average score, pass rate) |
-| 2 | Calm Light | Minimal, soft surfaces, indigo accent |
-| 3 | Glass Aurora | Frosted glass over an aurora gradient (static with reduced motion) |
-| 4 | Pipeline List | Stages stacked as full-width lanes |
-| 5 | Terminal Pro | Monospace terminal look with a KPI strip |
+| 1 | Operations (default) | Mission Control board plus a task detail pane (approval, scope, conversation, score bars), a terminal-style activity console and a keyboard status bar |
+| 2 | Mission Control | Dense dashboard with a KPI strip (tasks in flight, awaiting approval, average score, pass rate) |
+| 3 | Calm Light | Minimal, soft surfaces, indigo accent |
+| 4 | Glass Aurora | Frosted glass over an aurora gradient (static with reduced motion) |
+| 5 | Pipeline List | Stages stacked as full-width lanes |
+| 6 | Terminal Pro | Monospace terminal look with a KPI strip |
+
+In **Operations**, clicking a card selects it into the detail pane (by default the oldest task awaiting your approval, else the first in progress); double-click or Enter opens the full task window. Keys (ignored while typing or while a dialog is open, except Esc): `j`/`k` move within a lane, `h`/`l` switch lanes, `Enter` opens, `y`/`n` answer the selected task's approval when its buttons are enabled, `/` or `Ctrl+K` opens a command palette (New task, Pause all, Archive done, Toggle archived, Toggle theme), `Esc` closes. `Shift+N` creates a task.
 
 Tasks waiting for you show a **Yes** / **No** approval box on the card and in the task window; evaluations show colour-coded score sliders with per-criterion tooltips.
 

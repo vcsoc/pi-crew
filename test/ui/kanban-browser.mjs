@@ -20,7 +20,8 @@ const controller=new KanbanController(store,{spawn:()=>{throw Error('No live mod
 store.change(b=>b.tasks.forEach((t,i)=>{t.workers={...t.workers,operator:t.workers?.operator||{id:'op-'+i,name:['Iris Reed','Theo Hart','Ada Finch','Mara Vale','Leo Park'][i],role:'operator',definition:t.assignee},tester:{id:'test-'+i,name:'Nora Wells',role:'tester',definition:t.testerAgent},reviewer:{id:'review-'+i,name:'Eli Brooks',role:'reviewer',definition:t.reviewerAgent}};}));
 const artifacts=process.env.KANBAN_UI_ARTIFACTS||mkdtempSync(join(tmpdir(),'pi-kanban-ui-artifacts-'));mkdirSync(artifacts,{recursive:true});
 const desktop=join(artifacts,'desktop.png'),mobile=join(artifacts,'mobile.png');
-const web=await startKanbanServer(controller);let chrome,ws;const errors=[];
+// This script exercises the classic page; Mission Control (the default template) has its own page.
+const web=await startKanbanServer(controller,{template:()=>'calm-light'});let chrome,ws;const errors=[];
 try{
  chrome=spawn(process.env.CHROMIUM_BIN||'chromium',['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--remote-debugging-port=0','--user-data-dir='+join(root,'chrome')],{stdio:['ignore','ignore','pipe']});
  const endpoint=await new Promise((resolve,reject)=>{let output='';const timer=setTimeout(()=>reject(Error('Chromium startup timeout: '+output)),15000);chrome.stderr.on('data',part=>{output+=part;const match=output.match(/DevTools listening on (ws:\/\/[^\s]+)/);if(match){clearTimeout(timer);resolve(match[1]);}});chrome.on('error',reject);});
