@@ -18,6 +18,39 @@ function reviewerDone(id: string) { const lease = testerDone(id); store.evaluate
 beforeEach(() => { root = mkdtempSync(join(tmpdir(), "pi-kanban-store-")); cwd = join(root, "project"); mkdirSync(cwd); store = new KanbanStore(cwd, join(root, "state")); });
 afterEach(() => { vi.restoreAllMocks(); rmSync(root, { recursive: true, force: true }); });
 describe("persistent project Kanban", () => {
+  it("stores per-criterion evaluation notes aligned with the rubric for score tooltips", () => {
+    const t = create(), lease = operatorDone(t.id); evidence(t.id, lease);
+    expect(() => store.evaluate(t.id, "tester", [90, 90], "ok", hash, "tester-id", lease, ["only one"])).toThrow(/one criterion note per rubric criterion/);
+    store.evaluate(t.id, "tester", [92, 88], "All paths verified", hash, "tester-id", lease, ["Login validated", "Security tests added"]);
+    expect(current(t.id).evaluations.tester?.criterionNotes).toEqual(["Login validated", "Security tests added"]);
+  });
+  it("answers a worker approval request from the board and resumes the same checkpoint", () => {
+    const t = create(), lease = ready(t.id), fern = current(t.id).workers!.operator!;
+    store.change(b => { const x = store.task(b, t.id); store.requestApproval(x, "operator", fern, "Add the approval note to README.md?"); store.status(x, fern, "waiting_user", "details"); });
+    expect(() => store.respondApproval(t.id, "yes", "user")).toThrow(/still running/);
+    store.change(b => { store.status(store.task(b, t.id), fern, "idle", "worker turn ended"); });
+    store.release(t.id, lease, "Agent ended without a valid handoff.", true);
+    const waiting = current(t.id);
+    expect(waiting.blocked).toBe("Waiting for user: Add the approval note to README.md?");
+    expect(() => store.respondApproval(t.id, "yes", "user", "stale")).toThrow(/changed/);
+    const answered = store.respondApproval(t.id, "yes", "user", waiting.updatedAt);
+    expect(answered.history.at(-1)?.event).toBe("moved to ready");
+    expect(answered.blocked).toBeUndefined();
+    expect(answered.approval?.answer?.decision).toBe("yes");
+    expect(answered.comments.at(-1)).toMatchObject({ author: "user" });
+    expect(answered.comments.at(-1)!.text).toMatch(/^APPROVED by user: Add the approval note to README\.md\?/);
+    expect(() => store.respondApproval(t.id, "no", "user")).toThrow(/no open approval/);
+    store.claim(t.id, "resume-session");
+    expect(current(t.id).approval).toBeUndefined();
+  });
+  it("records a declined approval as an explicit do-not-proceed comment", () => {
+    const t = create(), lease = ready(t.id), fern = current(t.id).workers!.operator!;
+    store.change(b => { store.requestApproval(store.task(b, t.id), "operator", fern, "Delete the legacy folder?"); });
+    store.release(t.id, lease, "Agent ended without a valid handoff.", true);
+    const declined = store.respondApproval(t.id, "no", "user");
+    expect(declined.comments.at(-1)!.text).toMatch(/^DECLINED by user: Delete the legacy folder\?\nDo not do this/);
+    expect(declined.history.some(h => h.event === "user declined request")).toBe(true);
+  });
   it("keeps a reported waiting_user reason instead of a generic handoff error", () => {
     const t = create(), lease = ready(t.id), task = current(t.id);
     const fern = task.workers!.operator!;

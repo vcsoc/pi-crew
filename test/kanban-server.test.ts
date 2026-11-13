@@ -48,6 +48,13 @@ describe("loopback-only authenticated Kanban web server", () => {
     expect(snapshot.activity).toEqual(board.activity);
     abort.abort(); await reader.cancel().catch(() => {});
   });
+  it("validates board Yes/No approval answers", async () => {
+    const task = store.create(input, "orchestrator");
+    expect((await post({ action: "respond-approval", id: task.id, decision: "maybe", expectedUpdatedAt: task.updatedAt })).status).toBe(400);
+    const none = await post({ action: "respond-approval", id: task.id, decision: "yes", expectedUpdatedAt: task.updatedAt });
+    expect(none.status).toBe(400); expect((await none.json()).error).toMatch(/no open approval/);
+    expect(KANBAN_SCRIPT).toContain("respond-approval");
+  });
   it("explicit user cancellation records a reason and disposition without accepting forged scores", async () => {
     const task = store.create(input, "orchestrator");
     expect((await post({ action: "cancel", id: task.id, expectedUpdatedAt: task.updatedAt })).status).toBe(400);

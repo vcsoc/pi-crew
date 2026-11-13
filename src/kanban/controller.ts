@@ -315,8 +315,8 @@ export class KanbanController {
       },
       tool: defineTool({
         name: "KanbanTask", label: "Kanban task", ...kanbanRenderers,
-        description: "Operate only on your assigned Kanban task. Test executes a real command and records its exit/output. Evaluate computes weighted rubric scores. Handoff advances only after role-specific gates pass. PR creates or reviews the task PR; it never bypasses branch protections.",
-        parameters: Type.Object({ proposal: Type.Optional(Type.Object({ parentId: Type.String(), title: Type.String(), scope: Type.String(), reason: Type.String(), expectedResult: Type.String(), relationship: Type.Object({ targetId: Type.String(), type: Type.Union(['depends-on','completed-before','completed-after'].map(v=>Type.Literal(v))), blocking: Type.Boolean() }) })), action: Type.Union(["get", "comment", "status", "propose", "test", "evaluate", "handoff", "pr"].map(v => Type.Literal(v))), notes: Type.Optional(Type.String()), summary: Type.Optional(Type.String()), details: Type.Optional(Type.String()), state: Type.Optional(Type.Union(["working", "thinking", "waiting_dependency", "waiting_user", "stuck", "idle"].map(v => Type.Literal(v)))), dependencyId: Type.Optional(Type.String()), command: Type.Optional(Type.String()), scores: Type.Optional(Type.Array(Type.Number())) }),
+        description: "Operate only on your assigned Kanban task. When you need the user's permission, call status with state waiting_user, notes (details) and question (one short plain-English yes/no question), then end your turn; the user answers with Yes/No buttons and you resume reading the APPROVED/DECLINED comment. Test executes a real command and records its exit/output. Evaluate computes weighted rubric scores. Handoff advances only after role-specific gates pass. PR creates or reviews the task PR; it never bypasses branch protections.",
+        parameters: Type.Object({ proposal: Type.Optional(Type.Object({ parentId: Type.String(), title: Type.String(), scope: Type.String(), reason: Type.String(), expectedResult: Type.String(), relationship: Type.Object({ targetId: Type.String(), type: Type.Union(['depends-on','completed-before','completed-after'].map(v=>Type.Literal(v))), blocking: Type.Boolean() }) })), action: Type.Union(["get", "comment", "status", "propose", "test", "evaluate", "handoff", "pr"].map(v => Type.Literal(v))), notes: Type.Optional(Type.String()), summary: Type.Optional(Type.String()), details: Type.Optional(Type.String()), state: Type.Optional(Type.Union(["working", "thinking", "waiting_dependency", "waiting_user", "stuck", "idle"].map(v => Type.Literal(v)))), question: Type.Optional(Type.String({ description: "With state waiting_user: one short plain-English yes/no question shown to the user with Yes/No buttons, e.g. \"Add the approval note to README.md?\"" })), dependencyId: Type.Optional(Type.String()), command: Type.Optional(Type.String()), criterionNotes: Type.Optional(Type.Array(Type.String(), { description: "Evaluate: one short explanation per rubric criterion, in rubric order (shown as score tooltips)" })), scores: Type.Optional(Type.Array(Type.Number())) }),
         execute: async (_call, args) => {
           await this.drainAudit();
           const t = this.active(id, lease), cwd = t.workspace ?? this.store.identity.projectPath;
@@ -332,7 +332,7 @@ export class KanbanController {
             if (!args.state || !identity) throw new Error("State and worker identity required");
             if (args.state === "waiting_dependency" && !args.dependencyId) throw new Error("Waiting on an agent requires dependencyId");
             const reason = text(args.notes, "Status reason", 500);
-            this.store.change(b => { const task = this.store.task(b, id); this.store.assertActive(task, lease); this.store.status(task, identity, args.state!, reason, args.dependencyId); this.store.audit(task, lease.role, "worker status reported", { state: args.state, reason, dependencyId: args.dependencyId }); });
+            this.store.change(b => { const task = this.store.task(b, id); this.store.assertActive(task, lease); this.store.status(task, identity, args.state!, reason, args.dependencyId); if (args.state === "waiting_user") this.store.requestApproval(task, lease.role, identity, args.question ? text(args.question, "Approval question", 300) : reason); this.store.audit(task, lease.role, "worker status reported", { state: args.state, reason, question: args.question, dependencyId: args.dependencyId }); });
             return result(this.active(id, lease).workerStatus);
           }
           if (args.action === "comment") return result(this.store.comment(id, args.summary !== undefined ? { summary: args.summary, details: args.details ?? args.notes ?? "" } : text(args.notes ?? args.details, "Comment", 200000), lease.role));
@@ -353,7 +353,7 @@ export class KanbanController {
           if (args.action === "evaluate") {
             if (lease.role === "operator") throw new Error("Operator cannot self-score");
             const hash = await this.snapshot(t, signal);
-            const task = await this.retryBoard(() => this.store.evaluate(id, lease.role, args.scores ?? [], text(args.notes, "Evaluation/fix instructions"), hash, `${lease.role}:${lease.token}`, lease), signal);
+            const task = await this.retryBoard(() => this.store.evaluate(id, lease.role, args.scores ?? [], text(args.notes, "Evaluation/fix instructions"), hash, `${lease.role}:${lease.token}`, lease, args.criterionNotes), signal);
             return result(task, task.phase !== lease.role);
           }
           if (args.action === "pr") { await this.pullRequest(id, lease, signal); const task = this.store.task(this.store.read(), id); return result(task, !!task.blocked); }
@@ -456,7 +456,7 @@ export class KanbanController {
         rubric: Type.Optional(Type.Array(Type.Object({ title: Type.String(), weight: Type.Number() }))),
         prMode: Type.Optional(Type.Union([Type.Literal("none"), Type.Literal("review"), Type.Literal("merge")])),
         holdInBacklog: Type.Optional(Type.Boolean({ description: "Create only: leave the new task in Backlog solely on explicit user request; report its ID, reason and ready action to the user." })),
-        maxRuns: Type.Optional(Type.Integer({ minimum: 3, maximum: 100 })), scores: Type.Optional(Type.Array(Type.Number())), notes: Type.Optional(Type.String()),
+        maxRuns: Type.Optional(Type.Integer({ minimum: 3, maximum: 100 })), criterionNotes: Type.Optional(Type.Array(Type.String(), { description: "Evaluate: one short explanation per rubric criterion, in rubric order (shown as score tooltips)" })), scores: Type.Optional(Type.Array(Type.Number())), notes: Type.Optional(Type.String()),
         summary: Type.Optional(Type.String()), details: Type.Optional(Type.String()),
       }),
       execute: async (_call, args) => {
@@ -484,7 +484,7 @@ export class KanbanController {
             const t = this.store.task(this.store.read(), id);
             const hash = await this.snapshot(t);
             this.assertEnabled();
-            output = this.store.evaluate(id, "orchestrator", args.scores ?? [], text(args.notes, "Independent evaluation/fix instructions"), hash, `orchestrator:${this.owner}`);
+            output = this.store.evaluate(id, "orchestrator", args.scores ?? [], text(args.notes, "Independent evaluation/fix instructions"), hash, `orchestrator:${this.owner}`, undefined, args.criterionNotes);
           } else if (args.action === "complete") output = await this.complete(id);
           else throw new Error("Unknown Kanban action");
         }

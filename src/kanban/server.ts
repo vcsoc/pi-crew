@@ -67,6 +67,7 @@ export async function startKanbanServer(controller: KanbanController | ReadOnlyK
         else if (input.action === "cancel") controller.cancelTask(id, text(input.reason, "Cancellation reason"), actor, input.expectedUpdatedAt);
         else if (input.action === "archive") controller.store.archive(id, actor, input.expectedUpdatedAt);
         else if (input.action === "edit") controller.store.edit(id, input.task as NewTask, actor, input.expectedUpdatedAt);
+        else if (input.action === "respond-approval") { if (input.decision !== "yes" && input.decision !== "no") throw new Error("Decision must be yes or no"); controller.store.respondApproval(id, input.decision, actor, input.expectedUpdatedAt); }
         else if (input.action === "approve-merge") controller.store.change(b => {
           const t = controller.store.task(b, id);
           if (t.updatedAt !== input.expectedUpdatedAt) throw new Error("Task changed; reopen before approving merge");

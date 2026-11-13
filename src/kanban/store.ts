@@ -7,7 +7,7 @@ export const COLUMNS = ["backlog", "ready", "in progress", "review", "done"] as 
 export type Column = typeof COLUMNS[number];
 export type Role = "operator" | "tester" | "reviewer" | "orchestrator";
 export interface Criterion { title: string; weight: number }
-export interface Evaluation { role: Role; actor: string; revision: number; scores: number[]; total: number; notes: string; fingerprint: string; at: string }
+export interface Evaluation { role: Role; actor: string; revision: number; scores: number[]; total: number; notes: string; fingerprint: string; at: string; /** Per-criterion explanations aligned with the rubric. */ criterionNotes?: string[] }
 export interface TestEvidence { command: string; exitCode: number; output: string; fingerprint: string; at: string }
 export interface WorkerIdentity { id: string; name: string; role: Role; definition: string }
 export type WorkerState = "working" | "thinking" | "waiting_dependency" | "waiting_user" | "stuck" | "idle" | "finished" | "error";
@@ -28,6 +28,8 @@ export interface Task {
   prMode: "none" | "review" | "merge"; mergeApproved: boolean;
   pr?: { number: number; url: string; branch: string; completed: boolean; synced: boolean };
   workers?: Partial<Record<Role, WorkerIdentity>>; workerStatus?: WorkerStatus;
+  /** Open yes/no question a worker asked the user; answered from the board, cleared when the next worker claims. */
+  approval?: { question: string; role: Role; identity?: WorkerIdentity; at: string; answer?: { decision: "yes" | "no"; at: string } };
   snapshot?: { revision: number; manifest: string }; lastDispatchedAt?: string;
   queue?: { state: "capacity" | "lease" | "conflict"; reason: string; dependencyId?: string; limit?: number; running?: number };
   workspace?: string; fingerprint?: string; lease?: Lease; executionLease?: Lease; repliedThrough?: string; runs: number; maxRuns: number; blocked?: string;
@@ -300,6 +302,30 @@ export class KanbanStore {
       }
     });
   }
+  requestApproval(t: Task, role: Role, identity: WorkerIdentity | undefined, question: string) {
+    t.approval = { question, role, identity, at: now() };
+  }
+  /** User answers a worker's open question from the board: records a comment, unblocks, and resumes the same checkpoint. */
+  respondApproval(id: string, decision: "yes" | "no", actor: string, expectedUpdatedAt?: string) {
+    this.change(b => {
+      const t = this.task(b, id);
+      if (expectedUpdatedAt && t.updatedAt !== expectedUpdatedAt) throw new Error("Task changed; reopen before answering");
+      if (!t.approval || t.approval.answer) throw new Error("This task has no open approval request");
+      if (t.archived || t.disposition) throw new Error("Archived or cancelled tasks cannot receive approvals");
+      if (t.lease) throw new Error("A worker is still running; wait until it stops before answering");
+      const at = now();
+      t.approval.answer = { decision, at };
+      const c: Comment = { id: randomUUID(), author: actor, at, text: decision === "yes"
+        ? `APPROVED by user: ${t.approval.question}\nProceed exactly as requested and nothing beyond it.`
+        : `DECLINED by user: ${t.approval.question}\nDo not do this. Leave the affected work unchanged and report how you will proceed (or that the task cannot continue).` };
+      t.comments.push(c); this.audit(t, actor, "comment", c);
+      this.audit(t, actor, decision === "yes" ? "user approved request" : "user declined request", { question: t.approval.question });
+    });
+    // Resume the stopped checkpoint (ready retry keeps evidence); the worker reads the answer from task comments.
+    const t = this.task(this.read(), id);
+    if (t.blocked?.startsWith("Waiting for user: ") && !t.suspension && !t.userPaused && !t.executionLease) return this.move(id, "ready", actor);
+    return t;
+  }
   move(id: string, column: Column, actor: string, expectedUpdatedAt?: string) {
     return this.change(b => {
       const t = this.task(b, id);
@@ -442,6 +468,7 @@ export class KanbanStore {
       const lease: Lease = { token: randomUUID(), owner, pid: process.pid, role: t.phase, revision: t.revision, commentOnly, isolated };
       lease.identity = this.workerIdentity(b, t, lease.role);
       this.status(t, lease.identity, "working", "Worker claimed task");
+      if (t.approval?.answer) t.approval = undefined;
       if (isolated) t.executionLease = lease;
       t.lease = lease; t.runs++; t.lastDispatchedAt = now(); t.queue = undefined; if (t.phase === "operator" && !commentOnly) t.column = "in progress";
       this.audit(t, t.phase, "worker claimed task", { role: lease.role, run: t.runs });
@@ -467,7 +494,8 @@ export class KanbanStore {
           if (h.event === "worker claimed task") break;
           if (h.event === "worker status reported" && h.identity?.id === identity.id) { reported = h.data as typeof reported; break; }
         }
-        if (reported?.state === "waiting_user" && reported.reason) error = `Waiting for user: ${reported.reason}`;
+        const question = t.approval && !t.approval.answer ? t.approval.question : reported?.state === "waiting_user" ? reported.reason : undefined;
+        if (question) error = `Waiting for user: ${question}`;
       }
       this.status(t, identity, error ? (error.startsWith("Waiting for user: ") ? "waiting_user" : "error") : "finished", error ?? "Worker finished");
       t.lease = undefined;
@@ -484,13 +512,14 @@ export class KanbanStore {
       t.tests.push(evidence); this.audit(t, "tester", "test executed", evidence);
     });
   }
-  evaluate(id: string, role: Role, scores: number[], notes: string, fingerprint: string, actor: string, lease?: Lease) {
+  evaluate(id: string, role: Role, scores: number[], notes: string, fingerprint: string, actor: string, lease?: Lease, criterionNotes?: string[]) {
     return this.change(b => {
       const t = this.task(b, id);
       if (lease) this.assertActive(t, lease);
       if (t.archived || t.column !== "review" || t.phase !== role || role === "operator") throw new Error("This role cannot evaluate this task at this stage");
       const total = rubricScore(t.rubric, scores);
-      const e: Evaluation = { role, actor: lease?.identity?.name ?? actor, revision: t.revision, scores, total, notes: text(notes, "Detailed evaluation/fix instructions"), fingerprint, at: now() };
+      if (criterionNotes && criterionNotes.length !== t.rubric.length) throw new Error(`Provide one criterion note per rubric criterion (${t.rubric.length})`);
+      const e: Evaluation = { role, actor: lease?.identity?.name ?? actor, revision: t.revision, scores, total, notes: text(notes, "Detailed evaluation/fix instructions"), fingerprint, at: now(), ...(criterionNotes ? { criterionNotes: criterionNotes.map((n, i) => text(n, `Criterion ${i + 1} note`, 1000)) } : {}) };
       if (t.fingerprint !== fingerprint) throw new Error("Work changed since submission. Return the task to backlog and retest the new revision.");
       if (role === "tester" && (!t.tests.length || t.tests.some(e => e.fingerprint !== fingerprint || (total >= 85 && e.exitCode !== 0)))) throw new Error("Tester must execute passing tests against the submitted revision before scoring. Rerun each failed command exactly after correcting its cause; a different or filtered command does not supersede it. Historical attempts remain in the audit history.");
       t.evaluations[role] = e; this.audit(t, lease?.identity?.name ?? actor, "rubric evaluation", e, null, lease?.identity);
