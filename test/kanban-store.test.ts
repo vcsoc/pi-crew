@@ -20,7 +20,10 @@ afterEach(() => { vi.restoreAllMocks(); rmSync(root, { recursive: true, force: t
 describe("persistent project Kanban", () => {
   it("keeps a reported waiting_user reason instead of a generic handoff error", () => {
     const t = create(), lease = ready(t.id), task = current(t.id);
-    store.change(b => { const x = store.task(b, t.id); store.status(x, task.workers!.operator!, "waiting_user", "Approve settings change"); });
+    const fern = task.workers!.operator!;
+    store.change(b => { const x = store.task(b, t.id); store.status(x, fern, "waiting_user", "Approve settings change"); store.audit(x, "operator", "worker status reported", { state: "waiting_user", reason: "Approve settings change" }, null, fern); });
+    // Real sessions keep emitting activity after the report (response text, turn end), overwriting workerStatus.
+    store.change(b => { store.status(store.task(b, t.id), fern, "idle", "worker turn ended"); });
     store.release(t.id, lease, "Agent ended without a valid handoff.", true);
     const after = current(t.id);
     expect(after.blocked).toBe("Waiting for user: Approve settings change");
