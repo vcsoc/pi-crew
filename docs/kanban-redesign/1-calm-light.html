@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi Crew - test1 - Design sample 1 - Calm Light</title>
+<!-- Note: rubric totals (87.8% / 76%) are taken verbatim from BRIEF.md; per-criterion points in tooltips are score x weight. -->
+<style>
+  :root {
+    --bg: #f7f7f9;
+    --surface: #ffffff;
+    --surface-2: #f1f2f5;
+    --border: #e6e7ec;
+    --border-strong: #d6d8e0;
+    --text: #1d1f27;
+    --text-2: #555a6b;
+    --text-3: #6b7080;
+    --accent: #4f46e5;
+    --accent-soft: #eef0ff;
+    --accent-ink: #3730a3;
+    --green: #15803d;
+    --green-soft: #e8f6ee;
+    --green-bar: #22a05a;
+    --amber: #a15c07;
+    --amber-soft: #fdf3e2;
+    --amber-bar: #e3a008;
+    --red: #b42318;
+    --red-soft: #fdecea;
+    --red-bar: #e0483a;
+    --shadow-sm: 0 1px 2px rgba(20, 22, 40, .05);
+    --shadow-md: 0 1px 2px rgba(20, 22, 40, .04), 0 6px 18px -6px rgba(20, 22, 40, .10);
+    --shadow-lg: 0 24px 60px -12px rgba(20, 22, 40, .22);
+    --radius: 10px;
+    --focus: 0 0 0 3px rgba(79, 70, 229, .35);
+    color-scheme: light;
+  }
+  [data-theme="dark"] {
+    --bg: #111218;
+    --surface: #181a22;
+    --surface-2: #20222c;
+    --border: #2a2d39;
+    --border-strong: #363a48;
+    --text: #eceef4;
+    --text-2: #b4b8c6;
+    --text-3: #9196a6;
+    --accent: #8b85ff;
+    --accent-soft: #25244a;
+    --accent-ink: #c9c6ff;
+    --green: #5ad08b;
+    --green-soft: #15291f;
+    --amber: #f0b955;
+    --amber-soft: #2e2414;
+    --red: #ff8a7e;
+    --red-soft: #33191a;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+    --shadow-md: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 20px -8px rgba(0, 0, 0, .5);
+    --shadow-lg: 0 24px 60px -12px rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    transition: background .2s, color .2s;
+  }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: none; box-shadow: var(--focus); border-radius: 8px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+
+  /* Sample banner */
+  .sample-banner {
+    background: var(--accent-soft); color: var(--accent-ink);
+    font-size: 12px; text-align: center; padding: 6px 12px; letter-spacing: .01em;
+  }
+
+  /* Header */
+  header.app {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 28px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: saturate(160%) blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .logo {
+    width: 30px; height: 30px; border-radius: 9px; flex: none;
+    background: linear-gradient(135deg, var(--accent), #7c74ff);
+    display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 14px;
+    box-shadow: 0 4px 10px -4px rgba(79, 70, 229, .6);
+  }
+  .crumbs { display: flex; flex-direction: column; min-width: 0; }
+  .crumbs small { color: var(--text-3); font-size: 11.5px; }
+  .crumbs h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
+  .live {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 500; color: var(--green);
+    background: var(--green-soft); padding: 2px 8px 2px 7px; border-radius: 999px;
+  }
+  .live .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; position: relative; }
+  .live .dot::after {
+    content: ""; position: absolute; inset: -3px; border-radius: 50%;
+    border: 2px solid currentColor; opacity: .5; animation: pulse 2s ease-out infinite;
+  }
+  @keyframes pulse { from { transform: scale(.6); opacity: .6; } to { transform: scale(1.6); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .live .dot::after { animation: none; } * { transition: none !important; } }
+  .actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 32px; padding: 0 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface);
+    font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text);
+    box-shadow: var(--shadow-sm); transition: background .15s, border-color .15s, transform .05s;
+  }
+  .btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.07); background: var(--accent); }
+  [data-theme="dark"] .btn.primary { color: #111218; }
+  .btn svg { width: 14px; height: 14px; }
+  .btn.icon { width: 32px; padding: 0; justify-content: center; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; padding: 0 4px; height: 32px; border-radius: 8px; background: none; border: 0; }
+  .switch { width: 30px; height: 18px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: transform .15s; }
+  .toggle[aria-checked="true"] .switch { background: var(--accent); }
+  .toggle[aria-checked="true"] .switch::after { transform: translateX(12px); }
+  .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; padding: 24px 28px 40px; }
+  .board-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+  .board-head h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+  .legend { display: flex; gap: 14px; color: var(--text-3); font-size: 12px; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+  .board { display: grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap: 14px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+  .column { background: var(--surface-2); border-radius: 12px; padding: 10px; min-height: 420px; scroll-snap-align: start; border: 1px solid transparent; }
+  [data-theme="dark"] .column { background: #15161d; border-color: var(--border); }
+  .col-head { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; }
+  .col-head h3 { margin: 0; font-size: 13px; font-weight: 600; }
+  .col-head .count { font-size: 11.5px; color: var(--text-3); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; line-height: 18px; }
+  .col-head .ring { width: 10px; height: 10px; border-radius: 50%; border: 2px solid; }
+  .cards { display: flex; flex-direction: column; gap: 10px; }
+
+  .card {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 12px 10px; box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s, border-color .15s, transform .15s;
+  }
+  .card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); transform: translateY(-1px); }
+  .card:focus-visible { box-shadow: var(--focus); border-radius: var(--radius); }
+  .card.attention { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-sm); }
+  .card.archived { opacity: .7; border-style: dashed; }
+  .card-meta { display: flex; align-items: center; gap: 6px; color: var(--text-3); font-size: 11.5px; margin-bottom: 6px; }
+  .card-meta .rev { margin-left: auto; }
+  .card-title { font-size: 13.5px; font-weight: 550; margin: 0 0 10px; line-height: 1.35; color: var(--text); }
+  .card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+  .avatar { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff; flex: none; }
+  .av-fern { background: #4f9a6b; } .av-uma { background: #c26a3c; } .av-wade { background: #5a6fd6; } .av-orc { background: #7a5bb5; } .av-you { background: #3b3f4c; }
+  .role { color: var(--text-3); }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; line-height: 16px; margin-left: auto; }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .b-working { color: var(--accent-ink); background: var(--accent-soft); }
+  .b-waiting { color: var(--amber); background: var(--amber-soft); }
+  .b-blocked { color: var(--red); background: var(--red-soft); }
+  .b-cancelled { color: var(--text-3); background: var(--surface-2); }
+  .b-passed { color: var(--green); background: var(--green-soft); }
+  .b-idle { color: var(--text-3); background: var(--surface-2); }
+  .mini-scores { display: flex; gap: 6px; margin-top: 10px; }
+  .mini { flex: 1; height: 4px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .mini > span { display: block; height: 100%; border-radius: 4px; }
+
+  /* Approval prompt */
+  .approval {
+    margin-top: 10px; padding: 10px; border-radius: 8px;
+    background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .approval .ask { font-size: 11.5px; font-weight: 600; color: var(--accent-ink); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .approval p { margin: 0 0 10px; font-size: 12.5px; color: var(--text); }
+  .approval code { font-size: 11.5px; background: var(--surface); padding: 0 4px; border-radius: 4px; }
+  .approval .row { display: flex; gap: 8px; }
+  .yes, .no { flex: 1; height: 30px; border-radius: 7px; border: 0; font-weight: 600; font-size: 12.5px; cursor: pointer; color: #fff; }
+  .yes { background: #16803c; } .yes:hover { background: #126b32; }
+  .no { background: #c0281b; } .no:hover { background: #a32116; }
+
+  /* Activity */
+  aside.activity { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; height: fit-content; position: sticky; top: 84px; box-shadow: var(--shadow-sm); }
+  aside.activity h2 { margin: 0 0 4px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+  aside.activity .sub { color: var(--text-3); font-size: 12px; margin: 0 0 14px; }
+  .feed { list-style: none; margin: 0; padding: 0; position: relative; }
+  .feed::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 1px; background: var(--border); }
+  .feed li { position: relative; display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 7px 0; }
+  .feed .avatar { position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--surface); }
+  .feed .line { font-size: 12.5px; color: var(--text-2); }
+  .feed .line b { color: var(--text); font-weight: 600; }
+  .feed time { display: block; font-size: 11px; color: var(--text-3); margin-top: 1px; }
+  .feed li.new { animation: fadeIn .4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+  /* Drawer */
+  .scrim { position: fixed; inset: 0; background: rgba(20, 22, 40, .28); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 40; }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); z-index: 50;
+    background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg);
+    transform: translateX(102%); transition: transform .28s cubic-bezier(.2, .8, .2, 1);
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: none; }
+  .drawer-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); }
+  .drawer-head .top { display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 12px; }
+  .drawer-head .top .btn { margin-left: auto; }
+  .drawer-head h2 { margin: 10px 0 10px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; }
+  .props { display: grid; grid-template-columns: 96px 1fr; gap: 6px 12px; font-size: 12.5px; }
+  .props dt { color: var(--text-3); } .props dd { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tabs { display: flex; gap: 2px; padding: 0 16px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab { background: none; border: 0; padding: 10px 10px; font-size: 13px; color: var(--text-3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-weight: 500; }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  .drawer-body { overflow-y: auto; padding: 20px 22px 32px; flex: 1; }
+  .section { margin-bottom: 26px; }
+  .section h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); font-weight: 600; }
+  .scope { font-size: 13.5px; color: var(--text); margin: 0; }
+  .scope-list { margin: 8px 0 0; padding-left: 18px; color: var(--text-2); font-size: 13px; }
+  .scope-list li { margin: 3px 0; }
+
+  .eval { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; background: var(--surface); }
+  .eval-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .eval-head .total { margin-left: auto; font-size: 18px; font-weight: 650; letter-spacing: -.01em; }
+  .eval-head .verdict { font-size: 11px; }
+  .crit { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 4px 10px; align-items: center; margin-bottom: 12px; }
+  .crit:last-child { margin-bottom: 0; }
+  .crit-label { font-size: 12.5px; color: var(--text-2); display: flex; justify-content: space-between; gap: 8px; }
+  .crit-label .w { color: var(--text-3); font-size: 11.5px; }
+  .crit-val { grid-row: span 2; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .meter { position: relative; height: 8px; border-radius: 6px; background: var(--surface-2); cursor: help; }
+  .meter:focus-visible { box-shadow: var(--focus); }
+  .meter .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; }
+  .meter .knob { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--surface); border: 3px solid; box-shadow: var(--shadow-sm); }
+  .meter .pass { position: absolute; left: 85%; top: -4px; bottom: -4px; width: 2px; background: var(--text); opacity: .55; border-radius: 1px; }
+  .meter.total-meter { height: 10px; margin-top: 2px; }
+  .pass-note { font-size: 11px; color: var(--text-3); display: flex; justify-content: flex-end; margin-top: 4px; padding-right: 15%; transform: translateX(22px); }
+  .g { background: var(--green-bar); } .a { background: var(--amber-bar); } .r { background: var(--red-bar); }
+  .kg { border-color: var(--green-bar); } .ka { border-color: var(--amber-bar); } .kr { border-color: var(--red-bar); }
+  .tg { color: var(--green); } .ta { color: var(--amber); } .tr { color: var(--red); }
+
+  .tooltip {
+    position: fixed; z-index: 80; max-width: 260px; pointer-events: none;
+    background: #1d1f27; color: #f2f3f7; font-size: 12px; line-height: 1.45;
+    padding: 9px 11px; border-radius: 8px; box-shadow: var(--shadow-lg);
+    opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s;
+  }
+  [data-theme="dark"] .tooltip { background: #eceef4; color: #181a22; }
+  .tooltip.show { opacity: 1; transform: none; }
+  .tooltip b { display: block; margin-bottom: 2px; }
+  .tooltip .pts { display: block; margin-top: 6px; opacity: .8; font-variant-numeric: tabular-nums; }
+
+  .evidence { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .evidence + .evidence { margin-top: 10px; }
+  .ev-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface-2); font-size: 12px; color: var(--text-2); }
+  .ev-head .exit { margin-left: auto; font-weight: 600; }
+  .evidence pre { margin: 0; padding: 10px 12px; font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; color: var(--text); background: var(--surface); }
+  .evidence pre .p { color: var(--accent); user-select: none; }
+  .evidence pre .o { color: var(--text-3); }
+
+  .thread { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .msg { display: grid; grid-template-columns: 26px 1fr; gap: 10px; }
+  .msg .avatar { width: 26px; height: 26px; font-size: 11px; }
+  .msg-head { font-size: 12.5px; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+  .msg-head b { font-weight: 600; }
+  .msg-head span { color: var(--text-3); font-size: 11.5px; }
+  .msg-body { margin-top: 3px; font-size: 13px; color: var(--text-2); background: var(--surface-2); padding: 8px 11px; border-radius: 4px 10px 10px 10px; }
+  .composer { margin-top: 14px; display: flex; gap: 8px; }
+  .composer label { flex: 1; }
+  .composer textarea { width: 100%; resize: vertical; min-height: 38px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 13px; }
+  .composer textarea:focus-visible { border-color: var(--accent); }
+
+  /* Toast */
+  .toasts { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 90; align-items: center; width: max-content; max-width: calc(100vw - 32px); }
+  .toast { display: flex; align-items: center; gap: 10px; background: var(--text); color: var(--surface); padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow-lg); font-size: 13px; animation: toastIn .25s ease; }
+  .toast .ic { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; flex: none; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .hidden { display: none !important; }
+
+  /* Responsive */
+  @media (max-width: 1180px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.activity { position: static; }
+  }
+  @media (max-width: 720px) {
+    header.app { padding: 12px 16px; gap: 10px; }
+    .actions { margin-left: 0; width: 100%; }
+    .actions .label-text { display: none; }
+    .sep { display: none; }
+    .layout { padding: 16px; gap: 18px; }
+    .board { grid-template-columns: repeat(5, 82vw); }
+    .drawer-head, .drawer-body { padding-left: 16px; padding-right: 16px; }
+    .props { grid-template-columns: 84px 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="sample-banner" role="note">Design sample 1 - Calm Light (static mockup, not live data)</div>
+
+<header class="app">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">Pi</div>
+    <div class="crumbs">
+      <small>Pi Crew / Projects</small>
+      <h1>test1 <span class="live" role="status" aria-label="Live connection: connected"><span class="dot" aria-hidden="true"></span>Live</span></h1>
+    </div>
+  </div>
+  <div class="actions" role="toolbar" aria-label="Board actions">
+    <button class="btn primary" type="button" id="newTask" aria-label="New task">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span class="label-text">New task</span>
+    </button>
+    <button class="btn" type="button" id="pauseAll" aria-label="Pause all workers" aria-pressed="false">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="3" height="10" rx="1"/><rect x="9" y="3" width="3" height="10" rx="1"/></svg><span class="label-text">Pause all</span>
+    </button>
+    <button class="btn" type="button" id="archiveDone" aria-label="Archive done tasks">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="3" rx="1"/><path d="M3 6v6.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6M6.5 9h3"/></svg><span class="label-text">Archive done</span>
+    </button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="toggle" type="button" role="switch" aria-checked="false" id="showArchived">
+      <span class="switch" aria-hidden="true"></span><span>Show archived</span>
+    </button>
+    <button class="btn icon" type="button" id="themeToggle" aria-label="Switch to dark theme">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 1 1 6.5 2.5a4.5 4.5 0 0 0 7 7z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+  <section aria-labelledby="boardTitle">
+    <div class="board-head">
+      <h2 id="boardTitle">Board</h2>
+      <div class="legend" aria-label="Score legend">
+        <span><i class="g"></i>&ge; 85 pass</span>
+        <span><i class="a"></i>70-84</span>
+        <span><i class="r"></i>&lt; 70</span>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <aside class="activity" aria-labelledby="actTitle">
+    <h2 id="actTitle">Activity <span class="live" aria-hidden="true"><span class="dot"></span>Live</span></h2>
+    <p class="sub">Worker and orchestrator events for test1</p>
+    <ol class="feed" id="feed" aria-live="polite"></ol>
+  </aside>
+</main>
+
+<div class="scrim" id="scrim" aria-hidden="true"></div>
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="top">
+      <span class="mono" id="dId">04028acf</span><span aria-hidden="true">&middot;</span><span id="dRev">rev 3</span>
+      <button class="btn icon" type="button" id="closeDrawer" aria-label="Close task details">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <h2 id="drawerTitle">Task</h2>
+    <dl class="props">
+      <dt>Status</dt><dd id="dStatus"></dd>
+      <dt>Column</dt><dd id="dCol"></dd>
+      <dt>Assigned</dt><dd id="dWho"></dd>
+    </dl>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Task sections">
+    <button class="tab" role="tab" aria-selected="true" data-target="sec-scope" type="button">Scope</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="sec-eval" type="button">Evaluations</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="sec-evidence" type="button">Evidence</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="sec-thread" type="button">Conversation</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+<div class="toasts" id="toasts" aria-live="assertive"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PEOPLE = {
+    Fern: { role: "operator", cls: "av-fern" },
+    Uma: { role: "tester", cls: "av-uma" },
+    Wade: { role: "reviewer", cls: "av-wade" },
+    Orchestrator: { role: "orchestrator", cls: "av-orc" },
+    You: { role: "owner", cls: "av-you" }
+  };
+
+  var RUBRIC = [
+    { name: "Correct README placement", weight: 40, help: "Sentence sits directly after the project-contract link in README.md, in the same section, without disturbing surrounding Markdown." },
+    { name: "Approval honoured", weight: 35, help: "The worker paused and asked the owner before editing README.md, and only proceeded after an explicit Yes." },
+    { name: "Clear wording", weight: 25, help: "Sentence matches the requested text exactly, with correct punctuation and no extra commentary." }
+  ];
+
+  var COLUMNS = [
+    { key: "backlog", name: "Backlog", ring: "#9aa0b0" },
+    { key: "ready", name: "Ready", ring: "#6b8cff" },
+    { key: "progress", name: "In progress", ring: "#4f46e5" },
+    { key: "review", name: "Review", ring: "#e3a008" },
+    { key: "done", name: "Done", ring: "#22a05a" }
+  ];
+
+  var STATUS = {
+    working: { label: "Working", cls: "b-working" },
+    waiting: { label: "Waiting user", cls: "b-waiting" },
+    blocked: { label: "Blocked", cls: "b-blocked" },
+    cancelled: { label: "Cancelled", cls: "b-cancelled" },
+    passed: { label: "Accepted", cls: "b-passed" },
+    idle: { label: "Queued", cls: "b-idle" }
+  };
+
+  var TASKS = [
+    { id: "04028acf", rev: 3, col: "progress", title: "Add owner-approval sentence to README", who: "Fern", status: "waiting", approval: true,
+      scope: "Insert the sentence \"Changes to this README require owner approval.\" immediately after the project-contract link in README.md. Ask the owner before editing.",
+      bullets: ["Edit README.md only", "Keep existing link and heading order", "Owner approval required before write"],
+      evals: { tester: [95, 88, 72], testerTotal: 87.8, reviewer: [90, 60, 80], reviewerTotal: 76 } },
+    { id: "7b19e2d4", rev: 1, col: "backlog", title: "Document worker lease renewal in CONTRIBUTING.md", who: "Fern", status: "idle" },
+    { id: "c3a90f51", rev: 2, col: "ready", title: "Add exit-code capture to test evidence log", who: "Uma", status: "idle" },
+    { id: "e85d1c07", rev: 4, col: "progress", title: "Retry flaky board websocket reconnect", who: "Fern", status: "working" },
+    { id: "5f2a6b88", rev: 2, col: "review", title: "Normalise rubric weights to sum 100", who: "Wade", status: "blocked", mini: [92, 81, 64] },
+    { id: "a1d47c3e", rev: 5, col: "done", title: "Show revision number on task cards", who: "Wade", status: "passed", mini: [94, 90, 88] },
+    { id: "9e60b2fa", rev: 1, col: "done", title: "Spike: drag-and-drop between columns", who: "Fern", status: "cancelled" },
+    { id: "2c7f0d93", rev: 6, col: "done", title: "Initial project scaffold for test1", who: "Uma", status: "passed", archived: true, mini: [96, 91, 89] }
+  ];
+
+  var FEED = [
+    { t: "10:42:18", who: "Fern", html: "requested approval on <span class=\"mono\">04028acf</span>" },
+    { t: "10:41:55", who: "Wade", html: "scored <span class=\"mono\">04028acf</span> at <b class=\"ta\">76%</b> (below pass)" },
+    { t: "10:40:31", who: "Uma", html: "scored <span class=\"mono\">04028acf</span> at <b class=\"tg\">87.8%</b>" },
+    { t: "10:38:02", who: "Uma", html: "ran <span class=\"mono\">npm test</span> - exit 0" },
+    { t: "10:33:47", who: "Fern", html: "started rev 4 of <span class=\"mono\">e85d1c07</span>" },
+    { t: "10:29:10", who: "Wade", html: "blocked <span class=\"mono\">5f2a6b88</span>: weights sum to 95" },
+    { t: "10:21:36", who: "Orchestrator", html: "accepted <span class=\"mono\">a1d47c3e</span> (3/3 &ge; 85%)" }
+  ];
+
+  var showArchived = false;
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function tone(v) { return v >= 85 ? "g" : v >= 70 ? "a" : "r"; }
+  function avatar(name) {
+    var p = PEOPLE[name];
+    return "<span class=\"avatar " + p.cls + "\" aria-hidden=\"true\">" + name.charAt(0) + "</span>";
+  }
+  function badge(status) {
+    var s = STATUS[status];
+    return "<span class=\"badge " + s.cls + "\">" + s.label + "</span>";
+  }
+
+  function approvalHtml(t) {
+    return "<div class=\"approval\" data-approval=\"" + t.id + "\" role=\"group\" aria-label=\"Approval request from Fern\">" +
+      "<div class=\"ask\">" + avatar("Fern") + " Fern needs your approval</div>" +
+      "<p>Add the sentence <code>Changes to this README require owner approval.</code> after the project-contract link in README.md?</p>" +
+      "<div class=\"row\"><button type=\"button\" class=\"yes\" data-answer=\"yes\" data-task=\"" + t.id + "\" aria-label=\"Yes, approve README change\">Yes</button>" +
+      "<button type=\"button\" class=\"no\" data-answer=\"no\" data-task=\"" + t.id + "\" aria-label=\"No, reject README change\">No</button></div></div>";
+  }
+
+  function renderBoard() {
+    var board = document.getElementById("board");
+    board.innerHTML = COLUMNS.map(function (c) {
+      var items = TASKS.filter(function (t) { return t.col === c.key && (showArchived || !t.archived); });
+      var cards = items.map(function (t) {
+        var p = PEOPLE[t.who];
+        var mini = "";
+        if (t.evals) {
+          mini = "<div class=\"mini-scores\" aria-label=\"Scores: tester " + t.evals.testerTotal + "%, reviewer " + t.evals.reviewerTotal + "%\">" +
+            "<span class=\"mini\"><span class=\"" + tone(t.evals.testerTotal) + "\" style=\"width:" + t.evals.testerTotal + "%\"></span></span>" +
+            "<span class=\"mini\"><span class=\"" + tone(t.evals.reviewerTotal) + "\" style=\"width:" + t.evals.reviewerTotal + "%\"></span></span>" +
+            "<span class=\"mini\"></span></div>";
+        } else if (t.mini) {
+          mini = "<div class=\"mini-scores\" aria-label=\"Scores: tester " + t.mini[0] + "%, reviewer " + t.mini[1] + "%, orchestrator " + t.mini[2] + "%\">" +
+            t.mini.map(function (v) { return "<span class=\"mini\"><span class=\"" + tone(v) + "\" style=\"width:" + v + "%\"></span></span>"; }).join("") + "</div>";
+        }
+        var showPrompt = t.approval && t.status === "waiting";
+        return "<div class=\"card-wrap\">" +
+          "<button type=\"button\" class=\"card" + (showPrompt ? " attention" : "") + (t.archived ? " archived" : "") + "\" data-open=\"" + t.id + "\" aria-label=\"Open task " + t.id + ": " + esc(t.title) + "\">" +
+          "<div class=\"card-meta\"><span class=\"mono\">" + t.id + "</span>" + (t.archived ? "<span>&middot; archived</span>" : "") + "<span class=\"rev\">rev " + t.rev + "</span></div>" +
+          "<p class=\"card-title\">" + esc(t.title) + "</p>" +
+          "<div class=\"card-foot\"><span class=\"who\">" + avatar(t.who) + t.who + " <span class=\"role\">&middot; " + p.role + "</span></span>" + badge(t.status) + "</div>" +
+          mini + "</button>" +
+          (showPrompt ? approvalHtml(t) : "") + "</div>";
+      }).join("");
+      return "<section class=\"column\" aria-labelledby=\"col-" + c.key + "\">" +
+        "<div class=\"col-head\"><span class=\"ring\" style=\"border-color:" + c.ring + "\" aria-hidden=\"true\"></span>" +
+        "<h3 id=\"col-" + c.key + "\">" + c.name + "</h3><span class=\"count\" aria-label=\"" + items.length + " tasks\">" + items.length + "</span></div>" +
+        "<div class=\"cards\">" + (cards || "<p style=\"color:var(--text-3);font-size:12px;padding:8px\">No tasks</p>") + "</div></section>";
+    }).join("");
+  }
+
+  function renderFeed() {
+    document.getElementById("feed").innerHTML = FEED.map(function (f, i) {
+      return "<li class=\"" + (f.fresh ? "new" : "") + "\">" + avatar(f.who) +
+        "<div class=\"line\"><b>" + f.who + "</b> <span class=\"role\">" + PEOPLE[f.who].role + "</span> " + f.html +
+        "<time>" + f.t + "</time></div></li>";
+    }).join("");
+  }
+
+  function pushFeed(who, html) {
+    var d = new Date();
+    var t = [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return n < 10 ? "0" + n : "" + n; }).join(":");
+    FEED.forEach(function (f) { f.fresh = false; });
+    FEED.unshift({ t: t, who: who, html: html, fresh: true });
+    renderFeed();
+  }
+
+  function toast(text, kind) {
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.setAttribute("role", "status");
+    var bg = kind === "yes" ? "#16803c" : kind === "no" ? "#c0281b" : "#4f46e5";
+    var ic = kind === "yes" ? "&#10003;" : kind === "no" ? "&#10005;" : "i";
+    el.innerHTML = "<span class=\"ic\" style=\"background:" + bg + "\" aria-hidden=\"true\">" + ic + "</span><span>" + esc(text) + "</span>";
+    document.getElementById("toasts").appendChild(el);
+    setTimeout(function () { el.style.transition = "opacity .3s"; el.style.opacity = "0"; }, 2800);
+    setTimeout(function () { el.remove(); }, 3200);
+  }
+
+  function evalBlock(title, who, scores, total) {
+    var crits = RUBRIC.map(function (r, i) {
+      var v = scores[i], pts = (v * r.weight / 100).toFixed(1), tn = tone(v);
+      return "<div class=\"crit\">" +
+        "<div class=\"crit-label\"><span>" + r.name + "</span><span class=\"w\">" + r.weight + "%</span></div>" +
+        "<div class=\"crit-val t" + tn + "\">" + v + "</div>" +
+        "<div class=\"meter\" tabindex=\"0\" role=\"meter\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"" + v + "\" aria-label=\"" + r.name + " " + v + " of 100, pass mark 85\"" +
+        " data-tip-title=\"" + esc(r.name) + " (" + r.weight + "%)\" data-tip-body=\"" + esc(r.help) + "\" data-tip-pts=\"" + v + " x " + r.weight + "% = " + pts + " of " + r.weight + " points\">" +
+        "<span class=\"fill " + tn + "\" style=\"width:" + v + "%\"></span><span class=\"pass\" aria-hidden=\"true\"></span>" +
+        "<span class=\"knob k" + tn + "\" style=\"left:" + v + "%\"></span></div></div>";
+    }).join("");
+    var tt = tone(total);
+    return "<div class=\"eval\">" +
+      "<div class=\"eval-head\">" + avatar(who) + "<div><div style=\"font-weight:600;font-size:13px\">" + title + "</div><div style=\"color:var(--text-3);font-size:11.5px\">" + who + " &middot; " + PEOPLE[who].role + "</div></div>" +
+      "<span class=\"badge verdict " + (total >= 85 ? "b-passed" : "b-waiting") + "\" style=\"margin-left:auto\">" + (total >= 85 ? "Pass" : "Below 85%") + "</span>" +
+      "<span class=\"total t" + tt + "\" style=\"margin-left:10px\">" + total + "%</span></div>" +
+      "<div class=\"meter total-meter\" tabindex=\"0\" role=\"meter\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"" + total + "\" aria-label=\"" + title + " total " + total + " percent, pass mark 85\"" +
+      " data-tip-title=\"Weighted total\" data-tip-body=\"Sum of weighted criterion points. Completion requires tester, reviewer and orchestrator each at 85% or above.\" data-tip-pts=\"" + total + " / 100 - pass marker at 85\">" +
+      "<span class=\"fill " + tt + "\" style=\"width:" + total + "%\"></span><span class=\"pass\" aria-hidden=\"true\"></span></div>" +
+      "<div class=\"pass-note\">85% pass</div>" +
+      "<div style=\"height:12px\"></div>" + crits + "</div>";
+  }
+
+  function drawerContent(t) {
+    var scope = t.scope || ("Deliver: " + t.title + ". Keep changes scoped to the files named in the task and attach test evidence.");
+    var bullets = t.bullets || ["Single focused change", "Test evidence with exit code", "Rubric review by tester and reviewer"];
+    var evals = t.evals
+      ? evalBlock("Tester evaluation", "Uma", t.evals.tester, t.evals.testerTotal) +
+        evalBlock("Reviewer evaluation", "Wade", t.evals.reviewer, t.evals.reviewerTotal) +
+        "<div class=\"eval\" style=\"display:flex;align-items:center;gap:8px\">" + avatar("Orchestrator") +
+        "<div style=\"font-size:13px\"><b style=\"font-weight:600\">Orchestrator</b><div style=\"color:var(--text-3);font-size:12px\">Awaiting reviewer &ge; 85% before final acceptance</div></div>" +
+        "<span class=\"badge b-idle\">Pending</span></div>"
+      : "<p style=\"color:var(--text-3);font-size:13px;margin:0\">No evaluations yet for this revision.</p>";
+    var approval = (t.approval && t.status === "waiting") ? "<div class=\"section\">" + approvalHtml(t) + "</div>" : "";
+    return approval +
+      "<div class=\"section\" id=\"sec-scope\"><h3>Scope</h3><p class=\"scope\">" + esc(scope) + "</p><ul class=\"scope-list\">" +
+      bullets.map(function (b) { return "<li>" + esc(b) + "</li>"; }).join("") + "</ul></div>" +
+      "<div class=\"section\" id=\"sec-eval\"><h3>Evaluations &middot; rev " + t.rev + "</h3>" + evals + "</div>" +
+      "<div class=\"section\" id=\"sec-evidence\"><h3>Test evidence</h3>" +
+      "<div class=\"evidence\"><div class=\"ev-head\">" + avatar("Uma") + "<span>Uma &middot; 10:38:02</span><span class=\"exit tg mono\">exit 0</span></div>" +
+      "<pre class=\"mono\"><span class=\"p\">$ </span>npm test\n<span class=\"o\">  README contract  \u2713 sentence follows project-contract link\n  README contract  \u2713 approval recorded before write\n  3 passing (412ms)</span></pre></div>" +
+      "<div class=\"evidence\"><div class=\"ev-head\">" + avatar("Wade") + "<span>Wade &middot; 10:41:20</span><span class=\"exit tr mono\">exit 1</span></div>" +
+      "<pre class=\"mono\"><span class=\"p\">$ </span>git log -1 --format=%B -- README.md\n<span class=\"o\">No approval reference in commit message for rev " + t.rev + ".</span></pre></div></div>" +
+      "<div class=\"section\" id=\"sec-thread\"><h3>Conversation</h3><ol class=\"thread\">" +
+      msg("Fern", "10:31", "Located the project-contract link on line 12. Drafted the sentence; pausing for owner approval before writing.") +
+      msg("Uma", "10:38", "Tests green. Placement and wording verified against the brief.") +
+      msg("Wade", "10:41", "Edit was written before the approval was recorded in rev 2. Please reference the approval in the commit.") +
+      msg("Fern", "10:42", "Understood - re-requesting approval for rev " + t.rev + " so it is explicitly on record.") +
+      "</ol><div class=\"composer\"><label><span class=\"sr-only\">Add a comment</span><textarea placeholder=\"Reply to the crew...\"></textarea></label>" +
+      "<button type=\"button\" class=\"btn primary\" data-send=\"1\">Send</button></div></div>";
+  }
+  function msg(who, t, body) {
+    return "<li class=\"msg\">" + avatar(who) + "<div><div class=\"msg-head\"><b>" + who + "</b><span>" + PEOPLE[who].role + " &middot; " + t + "</span></div>" +
+      "<div class=\"msg-body\">" + esc(body) + "</div></div></li>";
+  }
+
+  var drawer = document.getElementById("drawer");
+  var scrim = document.getElementById("scrim");
+  var lastFocus = null;
+  var currentId = null;
+
+  function openDrawer(id) {
+    var t = TASKS.filter(function (x) { return x.id === id; })[0];
+    if (!t) return;
+    currentId = id;
+    lastFocus = document.activeElement;
+    document.getElementById("dId").textContent = t.id;
+    document.getElementById("dRev").textContent = "rev " + t.rev;
+    document.getElementById("drawerTitle").textContent = t.title;
+    document.getElementById("dStatus").innerHTML = badge(t.status).replace("margin-left:auto", "");
+    document.getElementById("dCol").textContent = COLUMNS.filter(function (c) { return c.key === t.col; })[0].name;
+    document.getElementById("dWho").innerHTML = "<span class=\"who\">" + avatar(t.who) + t.who + " <span class=\"role\">&middot; " + PEOPLE[t.who].role + "</span></span>";
+    document.getElementById("drawerBody").innerHTML = drawerContent(t);
+    document.getElementById("drawerBody").scrollTop = 0;
+    setTab("sec-scope", false);
+    drawer.classList.add("open"); scrim.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    setTimeout(function () { document.getElementById("closeDrawer").focus(); }, 50);
+  }
+  function closeDrawer() {
+    drawer.classList.remove("open"); scrim.classList.remove("open");
+    drawer.setAttribute("aria-hidden", "true");
+    currentId = null;
+    hideTip();
+    if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+  }
+  function setTab(target, scroll) {
+    document.querySelectorAll(".tab").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-target") === target ? "true" : "false"); });
+    if (scroll) {
+      var el = document.getElementById(target);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function answer(id, yes) {
+    var t = TASKS.filter(function (x) { return x.id === id; })[0];
+    if (!t) return;
+    t.status = yes ? "working" : "blocked";
+    t.approval = false;
+    renderBoard();
+    if (currentId === id) openDrawerRefresh(t);
+    toast(yes ? "Approved - Fern will update README.md (" + id + ")" : "Rejected - Fern will not edit README.md (" + id + ")", yes ? "yes" : "no");
+    pushFeed("You", (yes ? "approved" : "rejected") + " README change on <span class=\"mono\">" + id + "</span>");
+  }
+  function openDrawerRefresh(t) {
+    document.getElementById("dStatus").innerHTML = badge(t.status);
+    document.getElementById("drawerBody").innerHTML = drawerContent(t);
+    document.getElementById("closeDrawer").focus();
+  }
+
+  /* Tooltip */
+  var tip = document.getElementById("tooltip");
+  function showTip(el) {
+    tip.innerHTML = "<b>" + esc(el.getAttribute("data-tip-title")) + "</b>" + esc(el.getAttribute("data-tip-body")) +
+      "<span class=\"pts\">" + esc(el.getAttribute("data-tip-pts")) + "</span>";
+    var r = el.getBoundingClientRect();
+    tip.classList.add("show");
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var left = Math.min(Math.max(8, r.left + r.width / 2 - tw / 2), window.innerWidth - tw - 8);
+    var top = r.top - th - 10;
+    if (top < 8) top = r.bottom + 10;
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+    el.setAttribute("aria-describedby", "tooltip");
+  }
+  function hideTip() { tip.classList.remove("show"); }
+
+  document.addEventListener("mouseover", function (e) { var m = e.target.closest("[data-tip-title]"); if (m) showTip(m); });
+  document.addEventListener("mouseout", function (e) { var m = e.target.closest("[data-tip-title]"); if (m) hideTip(); });
+  document.addEventListener("focusin", function (e) { var m = e.target.closest && e.target.closest("[data-tip-title]"); if (m) showTip(m); else hideTip(); });
+  document.getElementById("drawerBody").addEventListener("scroll", hideTip);
+
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("[data-answer]");
+    if (a) { answer(a.getAttribute("data-task"), a.getAttribute("data-answer") === "yes"); return; }
+    var c = e.target.closest("[data-open]");
+    if (c) { openDrawer(c.getAttribute("data-open")); return; }
+    var tab = e.target.closest(".tab");
+    if (tab) { setTab(tab.getAttribute("data-target"), true); return; }
+    if (e.target.closest("[data-send]")) {
+      var ta = drawer.querySelector("textarea");
+      if (ta && ta.value.trim()) { toast("Comment posted (mock)", "info"); ta.value = ""; }
+      else if (ta) { ta.focus(); }
+    }
+  });
+  scrim.addEventListener("click", closeDrawer);
+  document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && drawer.classList.contains("open")) closeDrawer();
+    if (e.key === "Tab" && drawer.classList.contains("open")) {
+      var f = drawer.querySelectorAll("button, textarea, [tabindex=\"0\"]");
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* Header actions */
+  document.getElementById("newTask").addEventListener("click", function () { toast("New task form would open here (mock)", "info"); });
+  document.getElementById("pauseAll").addEventListener("click", function () {
+    var on = this.getAttribute("aria-pressed") !== "true";
+    this.setAttribute("aria-pressed", on ? "true" : "false");
+    this.querySelector(".label-text").textContent = on ? "Resume all" : "Pause all";
+    toast(on ? "All workers paused (mock)" : "Workers resumed (mock)", "info");
+    pushFeed("You", on ? "paused all workers" : "resumed all workers");
+  });
+  document.getElementById("archiveDone").addEventListener("click", function () {
+    var n = 0;
+    TASKS.forEach(function (t) { if (t.col === "done" && !t.archived) { t.archived = true; n++; } });
+    renderBoard();
+    toast(n ? n + " done task" + (n > 1 ? "s" : "") + " archived (mock)" : "Nothing to archive", "info");
+    if (n) pushFeed("You", "archived " + n + " done task" + (n > 1 ? "s" : ""));
+  });
+  document.getElementById("showArchived").addEventListener("click", function () {
+    showArchived = !showArchived;
+    this.setAttribute("aria-checked", showArchived ? "true" : "false");
+    renderBoard();
+  });
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    var dark = root.getAttribute("data-theme") !== "dark";
+    root.setAttribute("data-theme", dark ? "dark" : "light");
+    this.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+  });
+
+  renderBoard();
+  renderFeed();
+})();
+</script>
+</body>
+</html>

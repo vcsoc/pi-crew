@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi Crew - Mission Control (Design sample 2)</title>
+<style>
+:root{
+  --bg:#060a14;--bg2:#0a1122;--panel:#0d1629;--panel2:#111d35;--line:#1c2a47;--line2:#26375c;
+  --text:#dbe6ff;--muted:#8a9bc0;--dim:#5d6f96;
+  --cyan:#22e4ff;--green:#3dffa0;--amber:#ffbf3d;--red:#ff5470;--violet:#a98bff;
+  --cyan-bg:rgba(34,228,255,.10);--green-bg:rgba(61,255,160,.10);--amber-bg:rgba(255,191,61,.12);--red-bg:rgba(255,84,112,.12);--violet-bg:rgba(169,139,255,.12);
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --radius:8px;--shadow:0 20px 60px rgba(0,0,0,.55);
+  --grid:rgba(34,228,255,.035);
+}
+[data-theme="light"]{
+  --bg:#eef2f8;--bg2:#e4eaf4;--panel:#ffffff;--panel2:#f4f7fc;--line:#d3dcea;--line2:#bccadf;
+  --text:#0d1830;--muted:#46577a;--dim:#6a7a99;
+  --cyan:#006f86;--green:#05794a;--amber:#9a5b00;--red:#c4203f;--violet:#5b3fc4;
+  --cyan-bg:rgba(0,111,134,.09);--green-bg:rgba(5,121,74,.10);--amber-bg:rgba(154,91,0,.10);--red-bg:rgba(196,32,63,.09);--violet-bg:rgba(91,63,196,.09);
+  --shadow:0 20px 50px rgba(20,40,80,.22);--grid:rgba(0,60,120,.04);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--sans);font-size:14px;line-height:1.45;color:var(--text);background:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;min-height:100vh;
+}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* sample banner */
+.sample{background:repeating-linear-gradient(135deg,var(--amber-bg) 0 12px,transparent 12px 24px);border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);text-align:center;padding:5px 12px}
+
+/* header */
+header.top{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--bg2),transparent);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--cyan);color:var(--cyan);font-family:var(--mono);font-weight:700;box-shadow:0 0 16px rgba(34,228,255,.25) inset}
+.brand h1{margin:0;font-size:15px;font-weight:650;letter-spacing:.02em}
+.brand .crumb{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.brand .proj{color:var(--cyan)}
+.live{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:999px;color:var(--green);background:var(--green-bg);text-transform:uppercase;letter-spacing:.08em}
+.live .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 var(--green);animation:pulse 1.8s infinite}
+.live.paused{color:var(--amber);background:var(--amber-bg)}
+.live.paused .dot{background:var(--amber);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(61,255,160,.6)}70%{box-shadow:0 0 0 8px rgba(61,255,160,0)}100%{box-shadow:0 0 0 0 rgba(61,255,160,0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line2);background:var(--panel);padding:7px 12px;border-radius:6px;font-size:12.5px;font-weight:550;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--cyan);background:var(--panel2)}
+.btn.primary{background:var(--cyan);color:#021018;border-color:var(--cyan)}
+[data-theme="light"] .btn.primary{color:#fff}
+.btn.primary:hover{filter:brightness(1.1);background:var(--cyan)}
+.btn.warn[aria-pressed="true"]{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
+.btn .k{font-family:var(--mono);font-size:10px;color:var(--dim);border:1px solid var(--line2);border-radius:3px;padding:0 4px}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;padding:6px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--panel)}
+.switch .track{width:28px;height:16px;border-radius:999px;background:var(--line2);position:relative;transition:background .15s}
+.switch .track::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--text);transition:transform .15s}
+.switch[aria-checked="true"] .track{background:var(--cyan)}
+.switch[aria-checked="true"] .track::after{transform:translateX(12px);background:#021018}
+.icon-btn{width:34px;height:34px;padding:0;justify-content:center}
+
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr) 1.4fr;gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.kpi{background:var(--bg2);padding:14px 20px;position:relative;overflow:hidden}
+.kpi .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.kpi .val{font-family:var(--mono);font-size:30px;font-weight:600;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:11.5px;color:var(--dim);margin-top:2px}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--cyan))}
+.kpi .spark{position:absolute;right:14px;bottom:12px;opacity:.85}
+.kpi.c{--accent:var(--cyan)} .kpi.c .val{color:var(--cyan)}
+.kpi.a{--accent:var(--amber)} .kpi.a .val{color:var(--amber)}
+.kpi.g{--accent:var(--green)} .kpi.g .val{color:var(--green)}
+.kpi.v{--accent:var(--violet)} .kpi.v .val{color:var(--violet)}
+.crewkpi{background:var(--bg2);padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.crewkpi .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--panel);border-radius:999px;padding:3px 10px 3px 4px;font-size:12px}
+.chip[aria-pressed="true"]{border-color:var(--rc);background:color-mix(in srgb,var(--rc) 14%,transparent)}
+.chip .av{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:700;color:#020a14;background:var(--rc)}
+.chip .r{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase}
+.chip .st{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.chip .st.idle{background:var(--dim)} .chip .st.wait{background:var(--amber)}
+.role-operator{--rc:var(--cyan)} .role-tester{--rc:var(--green)} .role-reviewer{--rc:var(--violet)} .role-orchestrator{--rc:var(--amber)}
+
+/* layout */
+main.wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;padding:16px 20px 28px}
+.board{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;align-items:start;min-width:0;overflow-x:auto;padding-bottom:6px}
+.col{background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid var(--line);border-radius:var(--radius);min-height:200px;display:flex;flex-direction:column}
+.col-h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);position:sticky;top:0}
+.col-h h2{margin:0;font-size:11.5px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+.col-h .cnt{margin-left:auto;font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:4px;background:var(--panel2);border:1px solid var(--line2);color:var(--muted)}
+.col-h .bar{width:8px;height:8px;border-radius:2px;background:var(--cc)}
+.col[data-col="backlog"]{--cc:var(--dim)} .col[data-col="ready"]{--cc:var(--violet)} .col[data-col="progress"]{--cc:var(--cyan)} .col[data-col="review"]{--cc:var(--amber)} .col[data-col="done"]{--cc:var(--green)}
+.col-b{padding:8px;display:flex;flex-direction:column;gap:8px}
+.empty{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;padding:18px 6px;border:1px dashed var(--line2);border-radius:6px}
+
+.card{position:relative;text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:9px 10px 9px 12px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s,transform .15s,box-shadow .15s}
+.card::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--sc,var(--line2))}
+.card:hover{border-color:var(--line2);transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.card.attn{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-bg),0 0 22px rgba(255,191,61,.12)}
+.card.archived{opacity:.55;border-style:dashed}
+.card .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.card .id{font-family:var(--mono);font-size:11px;color:var(--cyan)}
+.card .rev{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.card .ttl{font-size:13px;font-weight:560;line-height:1.3}
+.card .who{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+.card .who .av{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:9px;font-weight:700;color:#020a14;background:var(--rc)}
+.card .who .role{font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--rc)}
+.mini{display:flex;gap:4px;margin-left:auto}
+.mini span{font-family:var(--mono);font-size:10px;padding:0 4px;border-radius:3px;border:1px solid currentColor}
+.prog{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--cyan)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:1px 7px;border-radius:4px;border:1px solid}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-working{color:var(--cyan);background:var(--cyan-bg);border-color:color-mix(in srgb,var(--cyan) 45%,transparent)}
+.b-working::before{animation:blink 1.2s infinite}
+.b-waiting{color:var(--amber);background:var(--amber-bg);border-color:color-mix(in srgb,var(--amber) 45%,transparent)}
+.b-blocked{color:var(--red);background:var(--red-bg);border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+.b-cancelled{color:var(--muted);background:transparent;border-color:var(--line2)}
+.b-cancelled::before{background:none;border:1px solid currentColor}
+.b-accepted{color:var(--green);background:var(--green-bg);border-color:color-mix(in srgb,var(--green) 45%,transparent)}
+.b-queued{color:var(--violet);background:var(--violet-bg);border-color:color-mix(in srgb,var(--violet) 45%,transparent)}
+@keyframes blink{50%{opacity:.25}}
+.c-g{color:var(--green)} .c-a{color:var(--amber)} .c-r{color:var(--red)}
+
+/* side */
+aside.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.panel-h{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.panel-h h2{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.panel-h .meta{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+
+.approval{border-color:var(--amber);background:linear-gradient(180deg,var(--amber-bg),var(--panel) 60%)}
+.approval .panel-h{border-color:color-mix(in srgb,var(--amber) 35%,transparent)}
+.approval .panel-h h2{color:var(--amber)}
+.ap-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.ap-who{display:flex;align-items:center;gap:8px;font-weight:600}
+.ap-who .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#020a14;background:var(--cyan)}
+.ap-q{margin:0;font-size:13.5px;line-height:1.5;padding:10px 12px;border-radius:6px;background:var(--bg2);border:1px solid var(--line)}
+.ap-q code{font-family:var(--mono);font-size:12px;color:var(--cyan)}
+.ap-meta{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.ap-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.yes,.no{border:1px solid;border-radius:6px;padding:9px 10px;font-weight:700;font-size:13px;letter-spacing:.02em}
+.yes{background:#13c97a;border-color:#13c97a;color:#02160c}
+.yes:hover{background:#2be38f}
+.no{background:#e23a58;border-color:#e23a58;color:#fff}
+.no:hover{background:#f04f6b}
+.ap-done{padding:14px;font-size:13px;color:var(--muted)}
+
+.feed{list-style:none;margin:0;padding:6px 0;max-height:430px;overflow:auto}
+.feed li{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:7px 14px;font-size:12.5px;border-left:2px solid transparent}
+.feed li.new{border-left-color:var(--cyan);background:var(--cyan-bg);animation:fadein .6s}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}}
+.feed time{font-family:var(--mono);font-size:11px;color:var(--dim);padding-top:1px}
+.feed .act{font-weight:650;color:var(--rc,var(--text))}
+.feed .tid{font-family:var(--mono);font-size:11px;color:var(--cyan)}
+.feed .ev{color:var(--muted)}
+
+/* meters */
+.meter{display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:4px 10px;align-items:center;position:relative}
+.meter .m-lbl{font-size:12.5px;display:flex;gap:6px;align-items:baseline;min-width:0}
+.meter .m-lbl .w{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.meter .m-val{font-family:var(--mono);font-size:13px;font-weight:600;text-align:right}
+.mtrack{grid-column:1 / -1;position:relative;height:10px;border-radius:5px;background:var(--bg2);border:1px solid var(--line);cursor:help}
+.mtrack .fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px 0 0 5px;background:var(--mc)}
+.mtrack .knob{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--panel);border:2px solid var(--mc);transform:translate(-50%,-50%);box-shadow:0 0 10px color-mix(in srgb,var(--mc) 60%,transparent)}
+.mtrack .pass{position:absolute;left:85%;top:-5px;bottom:-5px;width:2px;background:var(--text);opacity:.7}
+.mtrack .pass::after{content:"85";position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--muted)}
+.mg{--mc:var(--green)} .ma{--mc:var(--amber)} .mr{--mc:var(--red)}
+.mg .m-val{color:var(--green)} .ma .m-val{color:var(--amber)} .mr .m-val{color:var(--red)}
+.tip{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 8px);background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:9px 11px;font-size:12px;line-height:1.45;box-shadow:var(--shadow);opacity:0;visibility:hidden;transform:translateY(-3px);transition:all .12s;pointer-events:none}
+.tip b{font-family:var(--mono)}
+.mtrack:hover + .tip,.mtrack:focus + .tip,.mtrack:focus-visible + .tip{opacity:1;visibility:visible;transform:none}
+
+.evalcard{border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:12px 14px;display:flex;flex-direction:column;gap:14px}
+.eval-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.eval-h .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:11px;color:#020a14;background:var(--rc)}
+.eval-h .tot{margin-left:auto;font-family:var(--mono);font-size:22px;font-weight:700}
+.verdict{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;padding:2px 8px;border-radius:4px;border:1px solid}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(2,5,12,.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:24px;z-index:50}
+.scrim.open{display:flex}
+.modal{width:min(1040px,100%);max-height:min(820px,calc(100vh - 48px));display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:var(--shadow),0 0 0 1px rgba(34,228,255,.08);overflow:hidden}
+.m-head{padding:16px 20px 0;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--bg2),var(--panel))}
+.m-top{display:flex;align-items:flex-start;gap:12px}
+.m-top h2{margin:4px 0 0;font-size:19px;line-height:1.3}
+.m-ids{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.m-ids .id{color:var(--cyan)}
+.m-close{margin-left:auto;flex:none}
+.m-stats{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--muted)}
+.m-stats b{display:block;font-family:var(--mono);color:var(--text);font-size:13px;font-weight:600}
+.tabs{display:flex;gap:2px;overflow-x:auto}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;font-size:12.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--cyan);border-bottom-color:var(--cyan)}
+.tab .n{font-size:10px;margin-left:5px;padding:0 5px;border-radius:3px;background:var(--panel2);border:1px solid var(--line2)}
+.m-body{padding:18px 20px 22px;overflow:auto}
+.tabpanel[hidden]{display:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.sec h3{margin:0 0 8px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.box{border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:12px 14px;font-size:13px}
+.box ul{margin:0;padding-left:18px} .box li{margin:3px 0}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:12.5px}
+.kv dt{color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;padding-top:2px}
+.kv dd{margin:0}
+.thread{display:flex;flex-direction:column;gap:12px}
+.msg{display:grid;grid-template-columns:30px 1fr;gap:10px}
+.msg .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;color:#020a14;background:var(--rc)}
+.msg .bub{border:1px solid var(--line);background:var(--panel2);border-radius:0 8px 8px 8px;padding:9px 12px;font-size:13px}
+.msg .mh{display:flex;gap:8px;align-items:baseline;margin-bottom:3px;font-size:12px}
+.msg .mh b{color:var(--rc)} .msg .mh time{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.msg.user .av{background:var(--text)}
+.compose{display:flex;gap:8px;margin-top:4px}
+.compose input{flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:8px 10px;color:var(--text);font:inherit;font-size:13px}
+.term{background:#030710;border:1px solid var(--line2);border-radius:8px;overflow:hidden;font-family:var(--mono);font-size:12px}
+[data-theme="light"] .term{background:#0d1626;color:#dbe6ff}
+.term-h{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #1c2a47;color:#8a9bc0;font-size:11px}
+.term-h .ec{margin-left:auto;padding:1px 7px;border-radius:4px;font-weight:700}
+.ec0{color:#3dffa0;background:rgba(61,255,160,.12);border:1px solid rgba(61,255,160,.4)}
+.ec1{color:#ff5470;background:rgba(255,84,112,.12);border:1px solid rgba(255,84,112,.4)}
+.term pre{margin:0;padding:10px 12px;white-space:pre-wrap;word-break:break-word;color:#c8d6f5;line-height:1.55}
+.term .p{color:#22e4ff} .term .ok{color:#3dffa0} .term .bad{color:#ff5470} .term .mut{color:#5d6f96}
+.gate{display:flex;gap:10px;flex-wrap:wrap}
+.gate .g{flex:1;min-width:150px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel2)}
+.gate .g .lbl{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.gate .g .v{font-family:var(--mono);font-size:20px;font-weight:700;margin-top:2px}
+
+/* toast */
+.toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:80;max-width:min(380px,calc(100vw - 40px))}
+.toast{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--tc,var(--cyan));border-radius:6px;padding:10px 12px;box-shadow:var(--shadow);font-size:13px;animation:fadein .25s}
+.toast .tt{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--tc,var(--cyan))}
+
+footer{padding:0 20px 24px;color:var(--dim);font-family:var(--mono);font-size:11px}
+
+/* responsive */
+@media (max-width:1200px){main.wrap{grid-template-columns:1fr}aside.side{display:grid;grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(4,1fr)}.crewkpi{grid-column:1 / -1}}
+@media (max-width:760px){
+  header.top{padding:10px 12px}
+  .actions{margin-left:0;width:100%}
+  .btn .lbl-long{display:none}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi{padding:10px 14px}.kpi .val{font-size:24px}.kpi .spark{display:none}
+  main.wrap{padding:12px}
+  .board{grid-template-columns:1fr;overflow:visible}
+  aside.side{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+  .scrim{padding:0}
+  .modal{max-height:100vh;height:100%;border-radius:0}
+  .m-head{padding:12px 14px 0}.m-body{padding:14px}
+  .kv{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="sample" role="note">Design sample 2 - Mission Control (static mockup, not live data)</div>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">&pi;</div>
+    <div>
+      <div class="crumb">Pi Crew / Mission Control</div>
+      <h1>Project <span class="proj mono">test1</span></h1>
+    </div>
+    <span class="live" id="live" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="liveTxt">Live &middot; 42ms</span></span>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="newTask" type="button"><span aria-hidden="true">+</span> New task <span class="k" aria-hidden="true">N</span></button>
+    <button class="btn warn" id="pauseAll" type="button" aria-pressed="false"><span aria-hidden="true">&#10073;&#10073;</span> <span id="pauseLbl">Pause all</span></button>
+    <button class="btn" id="archiveDone" type="button"><span aria-hidden="true">&#8681;</span> Archive done</button>
+    <button class="switch" id="showArchived" type="button" role="switch" aria-checked="false"><span class="track" aria-hidden="true"></span>Show archived</button>
+    <button class="btn icon-btn" id="themeBtn" type="button" aria-label="Switch to light theme"><span aria-hidden="true" id="themeIcon">&#9788;</span></button>
+  </div>
+</header>
+
+<section class="kpis" aria-label="Key metrics">
+  <div class="kpi c"><div class="lbl">Tasks in flight</div><div class="val num" id="kInFlight">3</div><div class="sub">2 working &middot; 1 blocked</div>
+    <svg class="spark" width="80" height="26" viewBox="0 0 80 26" aria-hidden="true"><polyline fill="none" stroke="currentColor" style="color:var(--cyan)" stroke-width="1.5" points="0,20 10,18 20,22 30,12 40,14 50,8 60,10 70,6 80,9"/></svg></div>
+  <div class="kpi a"><div class="lbl">Awaiting approval</div><div class="val num" id="kAwait">1</div><div class="sub" id="kAwaitSub">Fern &middot; waiting 6m 12s</div>
+    <svg class="spark" width="80" height="26" viewBox="0 0 80 26" aria-hidden="true"><polyline fill="none" stroke="currentColor" style="color:var(--amber)" stroke-width="1.5" points="0,22 10,22 20,16 30,18 40,22 50,14 60,20 70,12 80,14"/></svg></div>
+  <div class="kpi v"><div class="lbl">Average score</div><div class="val num">84.6<span style="font-size:16px">%</span></div><div class="sub">last 7 evaluations</div>
+    <svg class="spark" width="80" height="26" viewBox="0 0 80 26" aria-hidden="true"><polyline fill="none" stroke="currentColor" style="color:var(--violet)" stroke-width="1.5" points="0,14 10,12 20,16 30,10 40,8 50,12 60,9 70,11 80,8"/></svg></div>
+  <div class="kpi g"><div class="lbl">Gate pass rate</div><div class="val num">71<span style="font-size:16px">%</span></div><div class="sub">5 of 7 &ge; 85% threshold</div>
+    <svg class="spark" width="80" height="26" viewBox="0 0 80 26" aria-hidden="true"><polyline fill="none" stroke="currentColor" style="color:var(--green)" stroke-width="1.5" points="0,18 10,16 20,18 30,12 40,14 50,10 60,12 70,8 80,9"/></svg></div>
+  <div class="crewkpi">
+    <div class="lbl">Crew &middot; filter by agent</div>
+    <div class="chips" role="group" aria-label="Filter tasks by agent">
+      <button type="button" class="chip role-operator" data-filter="Fern" aria-pressed="false"><span class="av" aria-hidden="true">F</span>Fern <span class="r">operator</span><span class="st wait" aria-label="waiting"></span></button>
+      <button type="button" class="chip role-tester" data-filter="Uma" aria-pressed="false"><span class="av" aria-hidden="true">U</span>Uma <span class="r">tester</span><span class="st" aria-label="active"></span></button>
+      <button type="button" class="chip role-reviewer" data-filter="Wade" aria-pressed="false"><span class="av" aria-hidden="true">W</span>Wade <span class="r">reviewer</span><span class="st" aria-label="active"></span></button>
+      <button type="button" class="chip role-orchestrator" data-filter="Orla" aria-pressed="false"><span class="av" aria-hidden="true">O</span>Orla <span class="r">orchestrator</span><span class="st idle" aria-label="idle"></span></button>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <section class="board" id="board" aria-label="Kanban board"></section>
+  <aside class="side">
+    <section class="panel approval" id="approvalPanel" aria-labelledby="apH">
+      <div class="panel-h"><h2 id="apH">Approval required</h2><span class="meta mono">04028acf &middot; r3</span></div>
+      <div class="ap-body" id="apBody">
+        <div class="ap-who"><span class="av" aria-hidden="true">F</span>Fern needs your approval</div>
+        <p class="ap-q" id="apQ">Add the sentence <code>'Changes to this README require owner approval.'</code> after the project-contract link in <code>README.md</code>?</p>
+        <div class="ap-meta">Operator paused &middot; asked 09:41:07 &middot; blocks task 04028acf</div>
+        <div class="ap-btns">
+          <button type="button" class="yes" data-answer="yes" aria-describedby="apQ">Yes</button>
+          <button type="button" class="no" data-answer="no" aria-describedby="apQ">No</button>
+        </div>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="feedH">
+      <div class="panel-h"><h2 id="feedH">Live activity</h2><span class="meta" id="feedMeta">streaming</span></div>
+      <ol class="feed" id="feed" aria-live="polite" aria-relevant="additions"></ol>
+    </section>
+  </aside>
+</main>
+<footer>Pi Crew &middot; completion gate: tester, reviewer and orchestrator rubric scores must each be &ge; 85%. Static mockup.</footer>
+
+<div class="scrim" id="scrim" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle" id="modal">
+    <div class="m-head">
+      <div class="m-top">
+        <div style="min-width:0">
+          <div class="m-ids" id="mIds"></div>
+          <h2 id="mTitle"></h2>
+        </div>
+        <button class="btn icon-btn m-close" id="mClose" type="button" aria-label="Close task details">&#10005;</button>
+      </div>
+      <div class="m-stats" id="mStats"></div>
+      <div class="tabs" role="tablist" aria-label="Task detail sections">
+        <button class="tab" role="tab" id="t-scope" aria-controls="p-scope" aria-selected="true">Scope</button>
+        <button class="tab" role="tab" id="t-conv" aria-controls="p-conv" aria-selected="false" tabindex="-1">Conversation <span class="n">5</span></button>
+        <button class="tab" role="tab" id="t-eval" aria-controls="p-eval" aria-selected="false" tabindex="-1">Evaluations <span class="n">2</span></button>
+        <button class="tab" role="tab" id="t-evid" aria-controls="p-evid" aria-selected="false" tabindex="-1">Test evidence <span class="n">3</span></button>
+      </div>
+    </div>
+    <div class="m-body">
+      <div class="tabpanel" role="tabpanel" id="p-scope" aria-labelledby="t-scope">
+        <div class="grid2">
+          <div class="sec"><h3>Scope</h3><div class="box" id="mScope"></div></div>
+          <div class="sec"><h3>Assignment</h3><div class="box"><dl class="kv" id="mAssign"></dl></div></div>
+          <div class="sec"><h3>Acceptance rubric</h3><div class="box"><ul>
+            <li><b>Correct README placement</b> <span class="mono" style="color:var(--muted)">40%</span> - sentence sits directly after the project-contract link, no other lines moved.</li>
+            <li><b>Approval honoured</b> <span class="mono" style="color:var(--muted)">35%</span> - no edit was made before the owner answered.</li>
+            <li><b>Clear wording</b> <span class="mono" style="color:var(--muted)">25%</span> - exact sentence, punctuation and tone match the request.</li>
+          </ul></div></div>
+          <div class="sec"><h3>Best practices</h3><div class="box"><ul>
+            <li>Minimal diff; touch only README.md.</li>
+            <li>Ask before modifying owner-protected docs.</li>
+            <li>Record test command and exit code as evidence.</li>
+          </ul></div></div>
+        </div>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="p-conv" aria-labelledby="t-conv" hidden>
+        <div class="thread" id="thread"></div>
+        <form class="compose" onsubmit="return false"><label class="sr-only" for="cmt">Add a comment</label><input id="cmt" placeholder="Comment to crew (mock)..."><button class="btn" type="button" id="cmtSend">Send</button></form>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="p-eval" aria-labelledby="t-eval" hidden>
+        <div class="gate" style="margin-bottom:14px">
+          <div class="g"><div class="lbl">Tester &middot; Uma</div><div class="v c-g">87.8%</div></div>
+          <div class="g"><div class="lbl">Reviewer &middot; Wade</div><div class="v c-a">76.0%</div></div>
+          <div class="g"><div class="lbl">Orchestrator &middot; Orla</div><div class="v" style="color:var(--dim)">pending</div></div>
+          <div class="g"><div class="lbl">Gate</div><div class="v c-r">BLOCKED</div></div>
+        </div>
+        <div class="grid2" id="evals"></div>
+        <p style="font-size:12px;color:var(--dim);margin:12px 0 0">Hover or focus a bar for criterion detail. White marker = 85% pass threshold. Totals are as reported by each evaluator.</p>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="p-evid" aria-labelledby="t-evid" hidden>
+        <div style="display:flex;flex-direction:column;gap:12px" id="evid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+  var ROLE = { Fern: "operator", Uma: "tester", Wade: "reviewer", Orla: "orchestrator" };
+  var COLS = [
+    { key: "backlog", name: "Backlog" },
+    { key: "ready", name: "Ready" },
+    { key: "progress", name: "In progress" },
+    { key: "review", name: "Review" },
+    { key: "done", name: "Done" }
+  ];
+  var tasks = [
+    { id: "9b1e44d0", rev: 1, col: "backlog", title: "Document crew rubric weights in CONTRIBUTING", who: "Fern", status: null },
+    { id: "c7a2f310", rev: 2, col: "ready", title: "Add CHANGELOG entry for v0.4.0", who: "Fern", status: "queued", statusLbl: "queued" },
+    { id: "04028acf", rev: 3, col: "progress", title: "README: owner-approval sentence after contract link", who: "Fern", status: "waiting", statusLbl: "waiting user", attn: true, prog: 62, scores: { t: 87.8, r: 76 } },
+    { id: "5e93bb17", rev: 1, col: "progress", title: "Fix flaky board-sync integration test", who: "Uma", status: "working", statusLbl: "working", prog: 38 },
+    { id: "a40c7e92", rev: 4, col: "progress", title: "Migrate task store to JSONL checkpoints", who: "Fern", status: "blocked", statusLbl: "blocked", prog: 20 },
+    { id: "e215d8c6", rev: 2, col: "review", title: "Harden approval prompt escaping", who: "Wade", status: "working", statusLbl: "working", prog: 80, scores: { t: 91.0, r: 88.5 } },
+    { id: "3f6a0b58", rev: 2, col: "done", title: "Normalise worker role labels", who: "Wade", status: "accepted", statusLbl: "accepted", scores: { t: 94.0, r: 90.0 } },
+    { id: "71dd29a4", rev: 1, col: "done", title: "Prototype Slack notifier (superseded)", who: "Fern", status: "cancelled", statusLbl: "cancelled" },
+    { id: "0be8c5f1", rev: 3, col: "done", title: "Initial board scaffolding", who: "Wade", status: "accepted", statusLbl: "accepted", archived: true, scores: { t: 96.0, r: 92.0 } }
+  ];
+  var state = { showArchived: false, filter: null, paused: false, approved: false };
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function tone(v) { return v >= 85 ? "g" : v >= 70 ? "a" : "r"; }
+  function statusColor(s) { return { working: "var(--cyan)", waiting: "var(--amber)", blocked: "var(--red)", cancelled: "var(--dim)", accepted: "var(--green)", queued: "var(--violet)" }[s] || "var(--line2)"; }
+
+  function cardHTML(t) {
+    var badge = t.status ? '<span class="badge b-' + t.status + '">' + esc(t.statusLbl) + "</span>" : "";
+    var mini = t.scores ? '<span class="mini" aria-label="Scores: tester ' + t.scores.t + '%, reviewer ' + t.scores.r + '%"><span class="c-' + tone(t.scores.t) + '">T ' + Math.round(t.scores.t) + '</span><span class="c-' + tone(t.scores.r) + '">R ' + Math.round(t.scores.r) + "</span></span>" : "";
+    var prog = t.prog != null ? '<div class="prog" aria-hidden="true"><i style="width:' + t.prog + '%"></i></div>' : "";
+    return '<button type="button" class="card' + (t.attn && !state.approved ? " attn" : "") + (t.archived ? " archived" : "") + '" data-id="' + t.id + '" style="--sc:' + statusColor(t.status) + '" aria-label="Open task ' + t.id + ": " + esc(t.title) + '">' +
+      '<span class="row"><span class="id">#' + t.id + '</span><span class="rev">r' + t.rev + "</span>" + (t.archived ? '<span class="rev">&middot; archived</span>' : "") + mini + "</span>" +
+      '<span class="ttl">' + esc(t.title) + "</span>" +
+      '<span class="row"><span class="who role-' + ROLE[t.who] + '"><span class="av" aria-hidden="true">' + t.who[0] + "</span>" + t.who + ' <span class="role">' + ROLE[t.who] + "</span></span>" + '<span style="margin-left:auto">' + badge + "</span></span>" + prog + "</button>";
+  }
+
+  function render() {
+    var board = document.getElementById("board");
+    board.innerHTML = COLS.map(function (c) {
+      var list = tasks.filter(function (t) {
+        return t.col === c.key && (!t.archived || state.showArchived) && (!state.filter || t.who === state.filter);
+      });
+      return '<section class="col" data-col="' + c.key + '" aria-labelledby="h-' + c.key + '"><div class="col-h"><span class="bar" aria-hidden="true"></span><h2 id="h-' + c.key + '">' + c.name + '</h2><span class="cnt" aria-label="' + list.length + ' tasks">' + list.length + '</span></div><div class="col-b">' +
+        (list.length ? list.map(cardHTML).join("") : '<div class="empty">no tasks</div>') + "</div></section>";
+    }).join("");
+  }
+
+  /* feed */
+  var feed = [
+    ["09:47:52", "Uma", "5e93bb17", "re-ran board-sync suite (attempt 3/5)"],
+    ["09:46:30", "Wade", "e215d8c6", "started review r2"],
+    ["09:44:18", "Wade", "04028acf", "scored 76.0% - wording needs owner confirmation"],
+    ["09:43:02", "Uma", "04028acf", "scored 87.8% - tests exit 0"],
+    ["09:41:07", "Fern", "04028acf", "requested user approval for README edit"],
+    ["09:38:55", "Fern", "a40c7e92", "blocked: depends-on c7a2f310 not Done"],
+    ["09:35:11", "Orla", "3f6a0b58", "accepted (94 / 90 / 91)"],
+    ["09:30:40", "Orla", "71dd29a4", "cancelled: superseded by webhook design"]
+  ];
+  function feedItem(f, isNew) {
+    return '<li class="role-' + ROLE[f[1]] + (isNew ? " new" : "") + '"><time>' + f[0] + '</time><div><span class="act">' + f[1] + '</span> <span class="tid">#' + f[2] + '</span> <span class="ev">' + esc(f[3]) + "</span></div></li>";
+  }
+  function renderFeed() { document.getElementById("feed").innerHTML = feed.map(function (f) { return feedItem(f, false); }).join(""); }
+  function now() { var d = new Date(); return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return String(n).padStart(2, "0"); }).join(":"); }
+  function pushFeed(actor, id, ev) {
+    var f = [now(), actor, id, ev];
+    feed.unshift(f);
+    var ol = document.getElementById("feed");
+    ol.insertAdjacentHTML("afterbegin", feedItem(f, true));
+  }
+
+  /* toast */
+  function toast(title, msg, color) {
+    var box = document.getElementById("toasts");
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.setAttribute("role", "status");
+    el.style.setProperty("--tc", color || "var(--cyan)");
+    el.innerHTML = '<div><div class="tt">' + esc(title) + "</div><div>" + esc(msg) + "</div></div>";
+    box.appendChild(el);
+    setTimeout(function () { el.remove(); }, 4200);
+  }
+
+  /* approval */
+  document.getElementById("apBody").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-answer]");
+    if (!b) return;
+    var yes = b.getAttribute("data-answer") === "yes";
+    state.approved = true;
+    var t = tasks.filter(function (x) { return x.id === "04028acf"; })[0];
+    t.status = yes ? "working" : "blocked";
+    t.statusLbl = yes ? "working" : "blocked";
+    document.getElementById("approvalPanel").remove();
+    document.getElementById("kAwait").textContent = "0";
+    document.getElementById("kAwaitSub").textContent = "queue clear";
+    render();
+    pushFeed("Fern", "04028acf", yes ? "approval granted - applying README edit" : "approval denied - edit withdrawn, task blocked");
+    toast(yes ? "Approved" : "Declined", yes ? "Fern will add the sentence to README.md (mock)." : "Fern will not edit README.md (mock).", yes ? "var(--green)" : "var(--red)");
+  });
+
+  /* header actions */
+  document.getElementById("newTask").addEventListener("click", function () { toast("New task", "Task composer would open here (mock).", "var(--cyan)"); });
+  document.getElementById("pauseAll").addEventListener("click", function () {
+    state.paused = !state.paused;
+    this.setAttribute("aria-pressed", String(state.paused));
+    document.getElementById("pauseLbl").textContent = state.paused ? "Resume all" : "Pause all";
+    var live = document.getElementById("live");
+    live.classList.toggle("paused", state.paused);
+    document.getElementById("liveTxt").textContent = state.paused ? "Paused" : "Live \u00b7 42ms";
+    toast(state.paused ? "All agents paused" : "Agents resumed", state.paused ? "Fern, Uma and Wade stopped after current step (mock)." : "Dispatch re-enabled (mock).", "var(--amber)");
+  });
+  document.getElementById("archiveDone").addEventListener("click", function () {
+    var n = 0;
+    tasks.forEach(function (t) { if (t.col === "done" && !t.archived) { t.archived = true; n++; } });
+    render();
+    toast("Archived", n ? n + " done task(s) archived. Toggle Show archived to view." : "Nothing to archive.", "var(--violet)");
+  });
+  document.getElementById("showArchived").addEventListener("click", function () {
+    state.showArchived = !state.showArchived;
+    this.setAttribute("aria-checked", String(state.showArchived));
+    render();
+  });
+  document.getElementById("themeBtn").addEventListener("click", function () {
+    var root = document.documentElement;
+    var light = root.getAttribute("data-theme") !== "light";
+    root.setAttribute("data-theme", light ? "light" : "dark");
+    this.setAttribute("aria-label", light ? "Switch to dark theme" : "Switch to light theme");
+    document.getElementById("themeIcon").innerHTML = light ? "&#9790;" : "&#9788;";
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (c) {
+    c.addEventListener("click", function () {
+      var name = c.getAttribute("data-filter");
+      state.filter = state.filter === name ? null : name;
+      Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (x) { x.setAttribute("aria-pressed", String(x.getAttribute("data-filter") === state.filter)); });
+      render();
+    });
+  });
+
+  /* meters */
+  var CRIT = [
+    { n: "Correct README placement", w: 40, d: "Sentence appears immediately after the project-contract link; no other lines moved." },
+    { n: "Approval honoured", w: 35, d: "No file change was made before the owner answered the approval prompt." },
+    { n: "Clear wording", w: 25, d: "Exact requested sentence, punctuation and tone; reads naturally in context." }
+  ];
+  var uid = 0;
+  function meter(label, weight, val, desc) {
+    var id = "tip" + (++uid);
+    var pts = (val * weight / 100).toFixed(1);
+    var t = tone(val);
+    return '<div class="meter m' + t + '"><div class="m-lbl">' + esc(label) + (weight ? ' <span class="w">' + weight + "%</span>" : "") + '</div><div class="m-val">' + val.toFixed(val % 1 ? 1 : 0) + "%</div>" +
+      '<div class="mtrack" tabindex="0" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + val + '" aria-label="' + esc(label) + " " + val + '%" aria-describedby="' + id + '"><span class="fill" style="width:' + val + '%"></span><span class="pass" aria-hidden="true"></span><span class="knob" style="left:' + val + '%"></span></div>' +
+      '<div class="tip" role="tooltip" id="' + id + '"><div>' + esc(desc) + "</div>" + (weight ? '<div style="margin-top:5px">Contributes <b>' + pts + "</b> of " + weight + " pts &middot; " + (val >= 85 ? "above" : "below") + " 85% marker</div>" : "") + "</div></div>";
+  }
+  function evalCard(who, total, scores, verdict, note) {
+    var t = tone(total);
+    return '<div class="evalcard role-' + ROLE[who] + '"><div class="eval-h"><span class="av" aria-hidden="true">' + who[0] + "</span><div><b>" + who + '</b><div class="mono" style="font-size:10.5px;color:var(--muted);text-transform:uppercase">' + ROLE[who] + ' &middot; r3</div></div><span class="verdict c-' + t + '" style="border-color:currentColor">' + verdict + '</span><span class="tot c-' + t + '">' + total.toFixed(1) + "%</span></div>" +
+      meter("Overall", 0, total, who + " overall rubric score (as reported). Gate requires at least 85%.") +
+      CRIT.map(function (c, i) { return meter(c.n, c.w, scores[i], c.d); }).join("") +
+      '<div style="font-size:12.5px;color:var(--muted)">' + esc(note) + "</div></div>";
+  }
+
+  /* modal */
+  var lastFocus = null;
+  var TEAM = { "04028acf": true };
+  function openTask(id) {
+    var t = tasks.filter(function (x) { return x.id === id; })[0];
+    if (!t) return;
+    lastFocus = document.activeElement;
+    var real = TEAM[id];
+    document.getElementById("mIds").innerHTML = '<span class="id">#' + t.id + "</span><span>rev " + t.rev + "</span><span>&middot;</span><span>" + COLS.filter(function (c) { return c.key === t.col; })[0].name + "</span>" + (t.status ? '<span class="badge b-' + t.status + '">' + esc(t.statusLbl) + "</span>" : "");
+    document.getElementById("mTitle").textContent = t.title;
+    document.getElementById("mStats").innerHTML =
+      "<div>Operator<b>" + "Fern" + "</b></div><div>Tester<b>Uma</b></div><div>Reviewer<b>Wade</b></div><div>Orchestrator<b>Orla</b></div><div>Tester score<b class=\"c-" + (t.scores ? tone(t.scores.t) : "a") + "\">" + (t.scores ? t.scores.t.toFixed(1) + "%" : "&mdash;") + "</b></div><div>Reviewer score<b class=\"c-" + (t.scores ? tone(t.scores.r) : "a") + "\">" + (t.scores ? t.scores.r.toFixed(1) + "%" : "&mdash;") + "</b></div><div>Elapsed<b>00:18:44</b></div>";
+    document.getElementById("mScope").innerHTML = real
+      ? "<p style=\"margin:0 0 8px\">Insert one sentence into <code class=\"mono\">README.md</code> directly after the project-contract link, but only after the owner explicitly approves.</p><ul><li>Exact text: <i>Changes to this README require owner approval.</i></li><li>No other file or line changes.</li><li>Out of scope: rewording existing README sections.</li></ul>"
+      : "<p style=\"margin:0\">" + esc(t.title) + ". Sample scope shown for mockup; full detail is modelled on task #04028acf.</p>";
+    document.getElementById("mAssign").innerHTML =
+      '<dt>Operator</dt><dd>Fern &middot; implements</dd><dt>Tester</dt><dd>Uma &middot; runs evidence</dd><dt>Reviewer</dt><dd>Wade &middot; code review</dd><dt>Orchestrator</dt><dd>Orla &middot; final acceptance</dd><dt>Gate</dt><dd>All three scores &ge; 85%</dd><dt>Lease</dt><dd class="mono">fern-7c21 &middot; expires 10:12</dd>';
+    var msgs = [
+      ["Orla", "09:22", "Task released to Ready with rubric (40/35/25) and three-agent assignment."],
+      ["Fern", "09:40", "Located the project-contract link on line 14. README is owner-protected, so I am requesting approval before editing."],
+      ["Uma", "09:43", "Dry-run diff verified: single insertion after line 14. `npm test` exit 0. Wording criterion at 72 - sentence lacks trailing context."],
+      ["Wade", "09:44", "Placement is right, but no owner answer is recorded yet, so 'approval honoured' is only 60. Re-score after approval."],
+      ["You", "09:45", "Looking now - will answer in the approval panel."]
+    ];
+    document.getElementById("thread").innerHTML = msgs.map(function (m) {
+      var role = ROLE[m[0]];
+      return '<div class="msg ' + (role ? "role-" + role : "user") + '"><span class="av" aria-hidden="true">' + m[0][0] + '</span><div class="bub"><div class="mh"><b>' + m[0] + "</b>" + (role ? '<span class="mono" style="font-size:10px;color:var(--muted);text-transform:uppercase">' + role + "</span>" : "") + "<time>" + m[1] + "</time></div>" + esc(m[2]) + "</div></div>";
+    }).join("");
+    document.getElementById("evals").innerHTML =
+      evalCard("Uma", 87.8, [95, 88, 72], "pass", "Tests green; wording slightly terse.") +
+      evalCard("Wade", 76.0, [90, 60, 80], "revise", "Approval not yet recorded; re-score once owner answers.");
+    document.getElementById("evid").innerHTML = [
+      ["uma@test1 ~ r3", "npm test", 0, '<span class="p">$</span> npm test\n<span class="mut">&gt; test1@0.4.0 test\n&gt; node --test</span>\n<span class="ok">&#10004;</span> readme contains contract link (2.1ms)\n<span class="ok">&#10004;</span> approval sentence placed after link (1.4ms)\n<span class="ok">&#10004;</span> no unrelated diff (0.9ms)\n<span class="mut"># tests 3  pass 3  fail 0</span>'],
+      ["uma@test1 ~ r3", "git diff --stat", 0, '<span class="p">$</span> git diff --stat\n README.md | 2 ++\n 1 file changed, 2 insertions(+)'],
+      ["wade@test1 ~ r2", "grep -n \"owner approval\" README.md", 1, '<span class="p">$</span> grep -n "owner approval" README.md\n<span class="bad">(no match - r2 ran before approval, expected)</span>']
+    ].map(function (e) {
+      return '<div class="term"><div class="term-h"><span>' + e[0] + '</span><span class="mono" style="color:#dbe6ff">' + esc(e[1]) + '</span><span class="ec ec' + (e[2] ? 1 : 0) + '">exit ' + e[2] + "</span></div><pre>" + e[3] + "</pre></div>";
+    }).join("");
+    selectTab("t-scope");
+    var scrim = document.getElementById("scrim");
+    scrim.classList.add("open");
+    scrim.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    document.getElementById("mClose").focus();
+  }
+  function closeModal() {
+    var scrim = document.getElementById("scrim");
+    scrim.classList.remove("open");
+    scrim.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function selectTab(id) {
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
+      var on = t.id === id;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+  }
+  document.querySelector(".tabs").addEventListener("click", function (e) { var t = e.target.closest(".tab"); if (t) selectTab(t.id); });
+  document.querySelector(".tabs").addEventListener("keydown", function (e) {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+    var i = tabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      var n = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+      selectTab(n.id); n.focus();
+    }
+  });
+  document.getElementById("board").addEventListener("click", function (e) { var c = e.target.closest(".card"); if (c) openTask(c.getAttribute("data-id")); });
+  document.getElementById("mClose").addEventListener("click", closeModal);
+  document.getElementById("scrim").addEventListener("click", function (e) { if (e.target === this) closeModal(); });
+  document.getElementById("cmtSend").addEventListener("click", function () {
+    var inp = document.getElementById("cmt");
+    if (!inp.value.trim()) return;
+    document.getElementById("thread").insertAdjacentHTML("beforeend", '<div class="msg user"><span class="av" aria-hidden="true">Y</span><div class="bub"><div class="mh"><b>You</b><time>' + now().slice(0, 5) + "</time></div>" + esc(inp.value) + "</div></div>");
+    inp.value = "";
+    toast("Comment posted", "Visible to Fern, Uma and Wade (mock).");
+  });
+  document.addEventListener("keydown", function (e) {
+    var open = document.getElementById("scrim").classList.contains("open");
+    if (open && e.key === "Escape") { closeModal(); return; }
+    if (open && e.key === "Tab") {
+      var f = document.getElementById("modal").querySelectorAll('button:not([tabindex="-1"]),input,[tabindex="0"]');
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    if (!open && e.key.toLowerCase() === "n" && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !e.metaKey && !e.ctrlKey) {
+      document.getElementById("newTask").click();
+    }
+  });
+
+  /* simulated live ticks */
+  var ticks = [
+    ["Uma", "5e93bb17", "attempt 3/5 passed (1.92s)"],
+    ["Wade", "e215d8c6", "left 2 inline comments"],
+    ["Fern", "a40c7e92", "heartbeat - still blocked on c7a2f310"],
+    ["Uma", "5e93bb17", "flake isolated to websocket reconnect timer"]
+  ];
+  var ti = 0;
+  setInterval(function () {
+    if (state.paused || ti >= ticks.length) return;
+    var k = ticks[ti++];
+    pushFeed(k[0], k[1], k[2]);
+  }, 9000);
+  var lat = [38, 42, 47, 40, 44, 51, 39];
+  var li = 0;
+  setInterval(function () {
+    if (state.paused) return;
+    document.getElementById("liveTxt").textContent = "Live \u00b7 " + lat[li++ % lat.length] + "ms";
+  }, 3000);
+
+  render();
+  renderFeed();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi Crew - test1 - Design sample 5 - Terminal Pro</title>
+<style>
+:root{
+  --bg:#0a0d0a; --bg2:#0f140f; --bg3:#141b14; --line:#2a3a2a; --line2:#3c523c;
+  --fg:#cfdccb; --dim:#86967f; --green:#4dff8f; --green2:#2bd06b; --amber:#ffb63a; --red:#ff6b5e; --cyan:#6fd8e8; --violet:#c79bff;
+  --glow:0 0 6px rgba(77,255,143,.35); --sel:#163a22; --focus:#ffb63a;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+[data-theme="light"]{
+  --bg:#f3efe2; --bg2:#ebe6d4; --bg3:#e2dcc6; --line:#bdb498; --line2:#9a906f;
+  --fg:#1c1f1a; --dim:#55594c; --green:#0b6b30; --green2:#0b6b30; --amber:#8a5200; --red:#b3261e; --cyan:#0b5f6e; --violet:#6237a8;
+  --glow:none; --sel:#d6e8cf; --focus:#8a5200;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font:13px/1.45 var(--mono);display:flex;flex-direction:column;min-height:100vh;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
+[data-theme="light"] body{background-image:none}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--line2);padding:3px 9px;cursor:pointer;border-radius:0}
+button:hover{border-color:var(--green);color:var(--green)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+kbd{font:inherit;font-size:11px;border:1px solid var(--line2);border-bottom-width:2px;padding:0 4px;color:var(--amber);background:var(--bg2)}
+.g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)} .d{color:var(--dim)} .c{color:var(--cyan)} .v{color:var(--violet)}
+
+/* sample label */
+.sample{background:var(--amber);color:#111;padding:2px 12px;font-size:11px;letter-spacing:.04em;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+[data-theme="light"] .sample{color:#fff}
+
+/* header */
+header{display:flex;align-items:center;gap:14px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:var(--bg2)}
+.brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.brand h1{font-size:14px;margin:0;color:var(--green);text-shadow:var(--glow);font-weight:700}
+.brand .path{color:var(--dim)}
+.live{display:flex;align-items:center;gap:6px;color:var(--dim);white-space:nowrap}
+.dot{width:8px;height:8px;background:var(--green);box-shadow:var(--glow);animation:blink 1.6s steps(2,start) infinite}
+.paused .dot{background:var(--amber);animation:none}
+@keyframes blink{to{opacity:.25}}
+.hbtns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.hbtns button{display:inline-flex;gap:6px;align-items:center}
+.hbtns button .k{color:var(--dim);font-size:11px}
+.hbtns button.primary{border-color:var(--green);color:var(--green)}
+.hbtns button[aria-pressed="true"]{background:var(--sel);color:var(--green);border-color:var(--green)}
+.hbtns button.warn:hover{border-color:var(--amber);color:var(--amber)}
+
+/* layout */
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 460px;min-height:0}
+.left{display:grid;grid-template-rows:minmax(0,1fr) 190px;min-width:0;min-height:0;border-right:1px solid var(--line)}
+.frame{border:1px solid var(--line);position:relative;margin:14px 10px 6px}
+.frame>.ttl{position:absolute;top:-.8em;left:1ch;background:var(--bg);padding:0 1ch;color:var(--dim);white-space:nowrap}
+.frame>.ttl b{color:var(--fg);font-weight:600}
+.frame:focus-within{border-color:var(--line2)}
+
+.board{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:0;overflow:auto;min-height:0}
+.col{border-right:1px dashed var(--line);display:flex;flex-direction:column;min-height:0}
+.col:last-child{border-right:0}
+.colh{padding:10px 10px 6px;display:flex;justify-content:space-between;align-items:baseline;position:sticky;top:0;background:var(--bg);z-index:1}
+.colh h2{font-size:12px;margin:0;letter-spacing:.12em;text-transform:uppercase}
+.colh .n{color:var(--dim)}
+.colh .rule{display:block;color:var(--line2);overflow:hidden;white-space:nowrap;font-size:11px;line-height:1;padding:0 10px 4px}
+.col.active .colh h2{color:var(--green);text-shadow:var(--glow)}
+.cards{list-style:none;margin:0;padding:4px 8px 12px;display:flex;flex-direction:column;gap:8px}
+.card{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--bg2);padding:8px 9px;position:relative}
+.card:hover{border-color:var(--line2);color:inherit}
+.cardbtn{display:block;width:100%;text-align:left;border:0;padding:0;background:none;color:inherit;cursor:pointer}
+.cardbtn:hover{color:inherit}
+.cardbtn:focus-visible{outline:2px solid var(--focus);outline-offset:5px}
+.card.sel{border-color:var(--green);background:var(--sel);box-shadow:inset 3px 0 0 var(--green)}
+.card.sel::before{content:"\25B8";position:absolute;left:-12px;top:7px;color:var(--green)}
+.card .top{display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--dim)}
+.card .id{color:var(--cyan)}
+.card .t{display:block;margin:4px 0 6px;color:var(--fg);font-size:12.5px}
+.card .meta{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap}
+.who{color:var(--dim)} .who b{color:var(--fg);font-weight:500}
+.badge{font-size:10.5px;padding:0 5px;border:1px solid currentColor;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.b-working{color:var(--green)} .b-working::before{content:"\25CF ";animation:blink 1s steps(2,start) infinite}
+.b-waiting{color:var(--amber)} .b-blocked{color:var(--red)} .b-cancelled{color:var(--dim);text-decoration:line-through}
+.b-accepted{color:var(--green)} .b-queued{color:var(--cyan)} .b-archived{color:var(--violet)} .b-paused{color:var(--amber)}
+.card.cancelled .t{color:var(--dim);text-decoration:line-through}
+.mini{display:flex;gap:6px;margin-top:6px;font-size:10.5px;color:var(--dim)}
+.mini span b{font-weight:600}
+
+.ask{margin-top:8px;border:1px dashed var(--amber);padding:7px;background:rgba(255,182,58,.06)}
+.ask .h{color:var(--amber);font-size:11px;display:flex;justify-content:space-between}
+.ask p{margin:4px 0 7px;font-size:12px}
+.ask .btns{display:flex;gap:6px}
+.yes{border-color:var(--green);color:var(--green)} .yes:hover{background:var(--green);color:var(--bg)}
+.no{border-color:var(--red);color:var(--red)} .no:hover{background:var(--red);color:var(--bg);border-color:var(--red)}
+
+/* feed */
+.feed{overflow:auto;min-height:0;margin-top:14px;margin-bottom:8px}
+.feed ol{list-style:none;margin:0;padding:8px 10px;font-size:12px}
+.feed li{display:grid;grid-template-columns:70px 120px 1fr;gap:10px;padding:1px 0;white-space:nowrap}
+.feed li span:last-child{white-space:normal}
+.feed li.new{animation:flash 1.2s}
+@keyframes flash{from{background:var(--sel)}to{background:transparent}}
+.cursor::after{content:"\2588";color:var(--green);animation:blink 1s steps(2,start) infinite}
+
+/* detail pane */
+.detail{overflow:auto;min-height:0;background:var(--bg)}
+.detail .frame{margin:14px 12px 10px}
+.dhead{padding:12px 12px 4px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dhead h2{margin:0;font-size:15px;color:var(--fg)}
+.dhead .sub{color:var(--dim);font-size:11.5px;margin-top:3px}
+.closeb{display:none}
+.sec{padding:10px 10px 8px;font-size:12.5px}
+.kv{display:grid;grid-template-columns:100px 1fr;gap:2px 10px}
+.kv dt{color:var(--dim)} .kv dd{margin:0}
+.chat{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.chat li{border-left:2px solid var(--line2);padding-left:8px}
+.chat .from{font-size:11px;color:var(--dim)}
+.chat .from b{color:var(--cyan);font-weight:600}
+.chat li.user{border-left-color:var(--amber)} .chat li.user .from b{color:var(--amber)}
+
+.evalh{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 4px}
+.evalh .score{font-weight:700}
+.pass{font-size:10.5px;padding:0 5px;border:1px solid currentColor}
+.meter{position:relative;margin:4px 0 9px;cursor:help}
+.meter .lab{display:flex;justify-content:space-between;font-size:11.5px;gap:8px}
+.meter .lab span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:12px;border:1px solid var(--line2);margin-top:3px;background:repeating-linear-gradient(90deg,var(--bg3) 0 6px,transparent 6px 8px)}
+.fill{position:absolute;inset:1px auto 1px 1px;background:repeating-linear-gradient(90deg,currentColor 0 6px,transparent 6px 8px)}
+.mark{position:absolute;top:-4px;bottom:-4px;left:85%;width:0;border-left:2px solid var(--fg)}
+.mark::after{content:"85";position:absolute;top:-13px;left:-7px;font-size:9px;color:var(--dim)}
+.meter.overall .track{height:16px}
+.meter:focus-visible{outline-offset:4px}
+.hi{color:var(--green)} .mid{color:var(--amber)} .lo{color:var(--red)}
+.legend{font-size:10.5px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap;margin-top:2px}
+
+pre.ev{margin:0;background:var(--bg2);border:1px solid var(--line);padding:8px;font:inherit;font-size:12px;white-space:pre-wrap;word-break:break-word}
+.exit{display:inline-block;margin-top:5px;font-size:11.5px}
+
+#tip{position:fixed;z-index:50;max-width:280px;background:var(--bg2);border:1px solid var(--green);padding:7px 9px;font-size:11.5px;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+#tip.on{opacity:1;transform:none}
+#tip b{color:var(--green)}
+
+/* status line */
+.status{display:flex;gap:16px;align-items:center;padding:4px 12px;border-top:1px solid var(--line);background:var(--bg2);font-size:11.5px;color:var(--dim);overflow-x:auto;white-space:nowrap}
+.status .mode{background:var(--green);color:var(--bg);padding:0 8px;font-weight:700}
+.status .right{margin-left:auto}
+
+/* palette */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:40}
+.scrim.on{display:flex}
+.pal{width:min(620px,94vw);background:var(--bg);border:1px solid var(--green);box-shadow:0 0 0 1px var(--bg),0 20px 60px rgba(0,0,0,.6),var(--glow)}
+.pal .in{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.pal .in span{color:var(--green)}
+.pal input{flex:1;background:none;border:0;color:var(--fg);font:inherit;font-size:14px;outline:none}
+.pal ul{list-style:none;margin:0;padding:6px 0;max-height:52vh;overflow:auto}
+.pal li{display:flex;justify-content:space-between;padding:5px 14px;cursor:pointer;gap:10px}
+.pal li .grp{color:var(--dim);font-size:11px;margin-right:8px;display:inline-block;width:62px}
+.pal li[aria-selected="true"]{background:var(--sel);color:var(--green);box-shadow:inset 3px 0 0 var(--green)}
+.pal .foot{border-top:1px solid var(--line);padding:6px 12px;font-size:11px;color:var(--dim);display:flex;gap:14px;flex-wrap:wrap}
+.pal .empty{padding:10px 14px;color:var(--dim)}
+
+/* toasts */
+#toasts{position:fixed;right:16px;bottom:38px;display:flex;flex-direction:column;gap:6px;z-index:60}
+.toast{background:var(--bg2);border:1px solid var(--green);padding:7px 12px;font-size:12px;animation:tin .18s ease-out;max-width:340px}
+.toast.err{border-color:var(--red)}
+.toast::before{content:"[ok] ";color:var(--green)}
+.toast.err::before{content:"[rejected] ";color:var(--red)}
+@keyframes tin{from{opacity:0;transform:translateX(16px)}}
+
+/* responsive */
+@media (max-width:1100px){ main{grid-template-columns:minmax(0,1fr) 380px} }
+@media (max-width:820px){
+  main{grid-template-columns:1fr}
+  .left{border-right:0;grid-template-rows:auto 220px}
+  .board{grid-template-columns:repeat(5,82vw);scroll-snap-type:x mandatory;min-height:420px}
+  .col{scroll-snap-align:start}
+  .detail{position:fixed;inset:0;z-index:30;transform:translateX(100%);transition:transform .2s;border-left:1px solid var(--green)}
+  .detail.open{transform:none}
+  .closeb{display:inline-block}
+  .hbtns{margin-left:0;width:100%}
+  .hbtns button .k{display:none}
+  .status .hint-x{display:none}
+  .feed li{grid-template-columns:62px 1fr;}
+  .feed li span:nth-child(2){display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="sr" href="#board">Skip to board</a>
+<div class="sample" role="note"><span>Design sample 5 - Terminal Pro (static mockup, not live data)</span><span>press <kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>K</kbd> for commands, <kbd>?</kbd> for help</span></div>
+
+<header>
+  <div class="brand"><h1>pi-crew</h1><span class="path">~/projects/<b style="color:var(--fg)">test1</b> :: kanban</span></div>
+  <div class="live" id="live" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="liveTxt">LIVE sse://127.0.0.1:7420 &middot; 12ms</span></div>
+  <div class="hbtns" role="toolbar" aria-label="Board actions">
+    <button class="primary" id="bNew" aria-label="New task (shortcut c)">+ new task <span class="k">c</span></button>
+    <button class="warn" id="bPause" aria-pressed="false" aria-label="Pause all workers (shortcut p)">|| pause all <span class="k">p</span></button>
+    <button id="bArchive" aria-label="Archive done tasks (shortcut A)">archive done <span class="k">A</span></button>
+    <button id="bShowArch" aria-pressed="false" aria-label="Show archived tasks (shortcut .)">show archived <span class="k">.</span></button>
+    <button id="bTheme" aria-label="Toggle light or dark theme (shortcut t)">theme: <span id="themeName">phosphor</span> <span class="k">t</span></button>
+  </div>
+</header>
+
+<main>
+  <section class="left" aria-label="Board and activity">
+    <div class="frame" style="display:flex;min-height:0">
+      <span class="ttl">&#9484;&#9472; <b>board</b> &#9472; 5 lanes &#9472; <span id="totalN"></span> tasks &#9472; gate: tester+reviewer+orchestrator &ge; 85%</span>
+      <div class="board" id="board" role="region" aria-label="Kanban columns" tabindex="-1" style="flex:1"></div>
+    </div>
+    <div class="frame feed" id="feedWrap" tabindex="0" aria-label="Live activity feed">
+      <span class="ttl">&#9484;&#9472; <b>activity</b> &#9472; tail -f events.log</span>
+      <ol id="feed" aria-live="polite" aria-relevant="additions"></ol>
+    </div>
+  </section>
+
+  <aside class="detail" id="detail" aria-label="Task detail" tabindex="-1"></aside>
+</main>
+
+<div class="status" aria-label="Keyboard shortcuts">
+  <span class="mode" id="mode">NORMAL</span>
+  <span><kbd>j</kbd>/<kbd>k</kbd> move</span>
+  <span><kbd>h</kbd>/<kbd>l</kbd> lane</span>
+  <span><kbd>enter</kbd> open</span>
+  <span><kbd>y</kbd>/<kbd>n</kbd> approve</span>
+  <span class="hint-x"><kbd>/</kbd> commands</span>
+  <span class="hint-x"><kbd>esc</kbd> close</span>
+  <span class="right" id="posTxt"></span>
+</div>
+
+<div class="scrim" id="scrim">
+  <div class="pal" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="in"><span aria-hidden="true">&gt;</span><label class="sr" for="palIn">Type a command</label>
+      <input id="palIn" autocomplete="off" spellcheck="false" placeholder="type a command or task id..." role="combobox" aria-expanded="true" aria-controls="palList" aria-autocomplete="list"></div>
+    <ul id="palList" role="listbox" aria-label="Commands"></ul>
+    <div class="foot"><span><kbd>&uarr;</kbd><kbd>&darr;</kbd> select</span><span><kbd>enter</kbd> run</span><span><kbd>esc</kbd> dismiss</span><span style="margin-left:auto">mock actions only</span></div>
+  </div>
+</div>
+
+<div id="tip" role="tooltip"></div>
+<div id="toasts" aria-live="assertive"></div>
+
+<script>
+(function(){
+"use strict";
+var COLS=[["backlog","Backlog"],["ready","Ready"],["progress","In progress"],["review","Review"],["done","Done"]];
+var RUBRIC=[
+  {name:"Correct README placement",w:40,why:"Sentence sits directly after the project-contract link, in the same paragraph block, with no other README lines moved."},
+  {name:"Approval honoured",w:35,why:"Operator waited for an explicit owner yes/no before writing to README.md; no edits landed before approval."},
+  {name:"Clear wording",w:25,why:"Sentence matches the requested text exactly, reads naturally and keeps existing Markdown formatting."}
+];
+var tasks=[
+  {id:"04028acf",title:"Add owner-approval sentence to README",col:"progress",rev:3,who:"Fern",role:"operator",status:"waiting",
+   ask:"Add the sentence 'Changes to this README require owner approval.' after the project-contract link in README.md?",
+   scope:"Insert one sentence after the project-contract link in README.md. Requires explicit owner approval before writing. No other files.",
+   evals:{tester:{by:"Uma",total:87.8,s:[95,88,72]},reviewer:{by:"Wade",total:76,s:[90,60,80]}},
+   evidence:{cmd:"npm test -- readme-contract.spec.ts",out:"PASS  tests/readme-contract.spec.ts\n  v link to project-contract present (4 ms)\n  v approval sentence placed after link (2 ms)\n  v no other README lines changed (3 ms)\nTests: 3 passed, 3 total",code:0},
+   chat:[["Orchestrator","orchestrator","Rev 3 dispatched. Reviewer flagged approval flow (60%) in rev 2: edit staged before owner said yes."],
+         ["Fern","operator","Reverted the staged edit. Asking owner before touching README.md this time."],
+         ["Wade","reviewer","Placement is right. Will re-score 'Approval honoured' once the owner answers."]]},
+  {id:"7b1e93d2",title:"SSE reconnect with jittered backoff",col:"progress",rev:2,who:"Fern",role:"operator",status:"working",
+   scope:"Reconnect board event stream with exponential backoff (250ms to 8s, +/-20% jitter). Show 'reconnecting' in header."},
+  {id:"9f61c3ab",title:"Tester harness for README contract checks",col:"review",rev:2,who:"Uma",role:"tester",status:"working",
+   scope:"Vitest spec asserting README structure invariants, wired into npm test.",
+   evals:{tester:{by:"Uma",total:91,s:[92,90,90]}}},
+  {id:"a91c0f44",title:"Rubric tooltip copy and points math",col:"review",rev:4,who:"Wade",role:"reviewer",status:"working",
+   scope:"Tooltip explains each criterion and shows weighted points contributed."},
+  {id:"3f5d7e10",title:"Archive-done endpoint (POST /tasks/archive)",col:"ready",rev:1,who:"Fern",role:"operator",status:"queued",
+   scope:"Move all accepted Done tasks to archive; idempotent; emits task.archived events."},
+  {id:"c2e8b6a5",title:"Migrate board store to v2 schema",col:"backlog",rev:1,who:"Fern",role:"operator",status:"blocked",
+   scope:"Blocked by 3f5d7e10 (depends-on). Adds revision history table."},
+  {id:"5d0a77f3",title:"Drop legacy polling client",col:"backlog",rev:2,who:"Wade",role:"reviewer",status:"cancelled",
+   scope:"Cancelled: superseded by SSE reconnect (7b1e93d2). Evidence preserved."},
+  {id:"e4b2190c",title:"Pause-all stops current runs",col:"done",rev:5,who:"Orchestrator",role:"orchestrator",status:"accepted",
+   scope:"Pause-all explicitly stops live runs; agents resumable later.",
+   evals:{tester:{by:"Uma",total:93,s:[94,92,92]},reviewer:{by:"Wade",total:89,s:[90,88,88]}}},
+  {id:"b18d0e22",title:"Theme toggle persists per user",col:"done",rev:3,who:"Orchestrator",role:"orchestrator",status:"accepted",archived:true,
+   scope:"Archived. Theme stored in local settings."}
+];
+var feed=[
+  ["09:41:02","orchestrator","dispatched <span class=c>04028acf</span> rev 3 to Fern/operator"],
+  ["09:41:37","Uma/tester","scored <span class=c>04028acf</span> rev 2 <span class=g>87.8%</span> PASS"],
+  ["09:42:10","Wade/reviewer","scored <span class=c>04028acf</span> rev 2 <span class=a>76.0%</span> below gate"],
+  ["09:42:55","Fern/operator","reverted staged README edit on <span class=c>04028acf</span>"],
+  ["09:43:20","Fern/operator","<span class=a>waiting user</span>: approval requested on <span class=c>04028acf</span>"],
+  ["09:43:48","Uma/tester","exit 0 &middot; npm test -- readme-contract.spec.ts"],
+  ["09:44:05","orchestrator","<span class=r>blocked</span> <span class=c>c2e8b6a5</span> depends-on 3f5d7e10"]
+];
+var state={showArch:false,paused:false,sel:"04028acf",open:"04028acf",theme:"dark"};
+var $=function(s){return document.querySelector(s);};
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function band(v){return v>=85?"hi":v>=70?"mid":"lo";}
+function visible(){return tasks.filter(function(t){return state.showArch||!t.archived;});}
+function ordered(){var v=visible(),o=[];COLS.forEach(function(c){v.forEach(function(t){if(t.col===c[0])o.push(t);});});return o;}
+function byId(id){for(var i=0;i<tasks.length;i++)if(tasks[i].id===id)return tasks[i];return null;}
+var BADGE={working:"working",waiting:"waiting user",blocked:"blocked",cancelled:"cancelled",accepted:"accepted",queued:"queued",paused:"paused"};
+function statusOf(t){return (state.paused&&(t.status==="working"))?"paused":t.status;}
+
+function askHtml(t,ctx){
+  return '<div class="ask" role="group" aria-label="Approval request for '+t.id+'">'+
+    '<div class="h"><span>? Fern needs your approval</span><span class="d">y / n</span></div>'+
+    '<p>'+esc(t.ask)+'</p><div class="btns">'+
+    '<button class="yes" data-act="yes" data-id="'+t.id+'" aria-label="Yes, approve the README change for '+t.id+'">[y] Yes</button>'+
+    '<button class="no" data-act="no" data-id="'+t.id+'" aria-label="No, reject the README change for '+t.id+'">[n] No</button></div></div>';
+}
+
+function renderBoard(){
+  var v=visible(),html="";
+  $("#totalN").textContent=v.length;
+  var selT=byId(state.sel);
+  COLS.forEach(function(c){
+    var list=v.filter(function(t){return t.col===c[0];});
+    html+='<section class="col'+(selT&&selT.col===c[0]?" active":"")+'" aria-labelledby="h-'+c[0]+'">'+
+      '<div class="colh"><h2 id="h-'+c[0]+'">'+c[1]+'</h2><span class="n" aria-label="'+list.length+' tasks">['+list.length+']</span></div>'+
+      '<span class="colh rule" aria-hidden="true">'+"\u2500".repeat(60)+'</span><ul class="cards">';
+    if(!list.length)html+='<li class="d" style="padding:6px 2px;font-size:11px">-- empty --</li>';
+    list.forEach(function(t){
+      var st=statusOf(t),ev="";
+      if(t.evals){ev='<div class="mini">';["tester","reviewer"].forEach(function(r){var e=t.evals[r];if(e)ev+='<span>'+r[0].toUpperCase()+' <b class="'+band(e.total)+'">'+e.total.toFixed(1)+'</b></span>';});ev+='</div>';}
+      html+='<li><div class="card'+(t.id===state.sel?" sel":"")+(t.status==="cancelled"?" cancelled":"")+'" data-id="'+t.id+'">'+
+        '<button class="cardbtn" data-open="'+t.id+'" aria-label="Open task '+t.id+': '+esc(t.title)+', '+BADGE[st]+'">'+
+        '<span class="top"><span><span class="id">#'+t.id+'</span> r'+t.rev+'</span>'+(t.archived?'<span class="badge b-archived">archived</span>':'')+'</span>'+
+        '<span class="t">'+esc(t.title)+'</span>'+
+        '<span class="meta"><span class="who">@<b>'+t.who+'</b>/'+t.role+'</span><span class="badge b-'+st+'">'+BADGE[st]+'</span></span>'+ev+
+        '</button>'+(t.ask?askHtml(t,"card"):"")+'</div></li>';
+    });
+    html+='</ul></section>';
+  });
+  $("#board").innerHTML=html;
+  var o=ordered(),i=o.findIndex(function(t){return t.id===state.sel;});
+  $("#posTxt").textContent=(selT?"#"+selT.id+"  ":"")+(i+1)+"/"+o.length+"  test1@main";
+}
+
+function meterHtml(label,val,why,pts,overall){
+  var b=band(val),id="m"+Math.random().toString(36).slice(2,8);
+  return '<div class="meter'+(overall?" overall":"")+'" tabindex="0" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+val+'" aria-label="'+esc(label)+' '+val+' percent, pass mark 85" data-tip="'+esc('<b>'+label+'</b> &middot; '+val+'%<br>'+why+(pts?'<br><span class=a>'+pts+'</span>':''))+'">'+
+    '<div class="lab"><span>'+esc(label)+'</span><span class="'+b+'">'+val.toFixed(overall?1:0)+'%</span></div>'+
+    '<div class="track"><div class="fill '+b+'" style="width:calc('+val+'% - 2px)"></div><div class="mark" aria-hidden="true"></div></div></div>';
+}
+
+function evalHtml(role,e){
+  var pass=e.total>=85,h='<div class="evalh"><span><span class="v">'+role+'</span> &middot; @'+e.by+'</span><span class="pass '+(pass?"hi":"lo")+'">'+(pass?"PASS":"BELOW GATE")+'</span></div>';
+  h+=meterHtml("Overall (weighted)",e.total,"Weighted sum of criteria. Gate requires &ge; 85% from tester, reviewer and orchestrator.",null,true);
+  RUBRIC.forEach(function(r,i){var pts=(e.s[i]*r.w/100).toFixed(1);h+=meterHtml(r.name+" ("+r.w+"%)",e.s[i],r.why,"contributes "+pts+" / "+r.w+" pts",false);});
+  return h;
+}
+
+function renderDetail(){
+  var t=byId(state.open),d=$("#detail");
+  if(!t){d.innerHTML='<div class="sec d">no task selected. press <kbd>enter</kbd> on a card.</div>';return;}
+  var st=statusOf(t),h='<div class="dhead"><div><h2>'+esc(t.title)+'</h2><div class="sub"><span class="c">#'+t.id+'</span> &middot; rev '+t.rev+' &middot; '+COLS.filter(function(c){return c[0]===t.col;})[0][1]+' &middot; <span class="badge b-'+st+'">'+BADGE[st]+'</span></div></div>'+
+    '<button class="closeb" id="closeD" aria-label="Close task detail">[x]</button></div>';
+  if(t.ask)h+='<div style="padding:0 12px">'+askHtml(t,"detail")+'</div>';
+  h+='<div class="frame"><span class="ttl">&#9484;&#9472; <b>scope</b></span><div class="sec"><dl class="kv">'+
+     '<dt>assignee</dt><dd>@'+t.who+' <span class="d">/'+t.role+'</span></dd>'+
+     '<dt>gate</dt><dd>tester, reviewer, orchestrator &ge; 85%</dd><dt>brief</dt><dd>'+esc(t.scope)+'</dd></dl></div></div>';
+  if(t.chat){h+='<div class="frame"><span class="ttl">&#9484;&#9472; <b>conversation</b> &#9472; '+t.chat.length+'</span><div class="sec"><ul class="chat">';
+    t.chat.forEach(function(m){h+='<li class="'+(m[1]==="user"?"user":"")+'"><div class="from"><b>'+m[0]+'</b> /'+m[1]+'</div>'+esc(m[2])+'</li>';});
+    h+='</ul></div></div>';}
+  if(t.evals){h+='<div class="frame"><span class="ttl">&#9484;&#9472; <b>evaluations</b> &#9472; rubric</span><div class="sec">';
+    ["tester","reviewer"].forEach(function(r){if(t.evals[r])h+=evalHtml(r,t.evals[r]);});
+    h+='<div class="evalh"><span><span class="v">orchestrator</span></span><span class="pass d">PENDING</span></div>';
+    h+='<div class="legend"><span class="hi">&#9632; &ge;85 pass</span><span class="mid">&#9632; 70-84</span><span class="lo">&#9632; &lt;70</span><span>| = 85% gate</span></div></div></div>';}
+  if(t.evidence){h+='<div class="frame"><span class="ttl">&#9484;&#9472; <b>test evidence</b></span><div class="sec"><pre class="ev"><span class="g">$</span> '+esc(t.evidence.cmd)+'\n<span class="d">'+esc(t.evidence.out)+'</span></pre>'+
+    '<span class="exit">exit code: <b class="'+(t.evidence.code===0?"g":"r")+'">'+t.evidence.code+'</b> &middot; recorded by @Uma/tester 09:43:48</span></div></div>';}
+  else h+='<div class="frame"><span class="ttl">&#9484;&#9472; <b>test evidence</b></span><div class="sec d">no evidence recorded for this revision yet.</div></div>';
+  d.innerHTML=h;
+}
+
+function pushFeed(actor,msg){
+  var n=new Date(),ts=[n.getHours(),n.getMinutes(),n.getSeconds()].map(function(x){return String(x).padStart(2,"0");}).join(":");
+  feed.push([ts,actor,msg]);renderFeed(true);
+}
+function renderFeed(isNew){
+  var ol=$("#feed"),h="";
+  feed.forEach(function(f,i){h+='<li'+(isNew&&i===feed.length-1?' class="new"':'')+'><span class="d">'+f[0]+'</span><span class="a">'+esc(f[1])+'</span><span>'+f[2]+'</span></li>';});
+  h+='<li><span class="d">--:--:--</span><span></span><span class="cursor"></span></li>';
+  ol.innerHTML=h;var w=$("#feedWrap");w.scrollTop=w.scrollHeight;
+}
+
+function toast(msg,err){var el=document.createElement("div");el.className="toast"+(err?" err":"");el.textContent=msg;$("#toasts").appendChild(el);setTimeout(function(){el.remove();},3200);}
+
+function answer(id,yes){
+  var t=byId(id);if(!t||!t.ask)return;
+  delete t.ask;t.status="working";
+  t.chat.push(["you","user",yes?"Yes - go ahead and add it.":"No - do not change README.md."]);
+  toast(yes?"Approved: Fern will add the sentence to README.md (#"+id+")":"Rejected: Fern will not edit README.md (#"+id+")",!yes);
+  pushFeed("you/owner",(yes?'<span class=g>approved</span>':'<span class=r>rejected</span>')+' request on <span class=c>'+id+'</span>');
+  render();
+}
+function selectedPending(){var o=ordered();for(var i=0;i<o.length;i++)if(o[i].id===state.sel&&o[i].ask)return o[i];var a=tasks.filter(function(t){return t.ask;});return a[0]||null;}
+
+function render(){renderBoard();renderDetail();}
+function openTask(id){state.open=id;state.sel=id;render();var d=$("#detail");d.classList.add("open");if(window.innerWidth<=820)d.focus();}
+
+/* actions */
+var A={
+  newTask:function(){var id=Math.random().toString(16).slice(2,10);tasks.unshift({id:id,title:"Untitled task",col:"backlog",rev:1,who:"Fern",role:"operator",status:"queued",scope:"Draft scope - fill in before releasing to Ready."});state.sel=id;state.open=id;render();toast("Created task #"+id+" in Backlog (mock)");pushFeed("you/owner","created <span class=c>"+id+"</span>");},
+  pause:function(){state.paused=!state.paused;var b=$("#bPause");b.setAttribute("aria-pressed",String(state.paused));b.innerHTML=(state.paused?"&gt; resume all":"|| pause all")+' <span class="k">p</span>';$("#live").classList.toggle("paused",state.paused);
+    $("#liveTxt").textContent=state.paused?"PAUSED sse://127.0.0.1:7420":"LIVE sse://127.0.0.1:7420 \u00b7 12ms";toast(state.paused?"All current runs paused":"Workers resumed");pushFeed("you/owner",state.paused?"<span class=a>pause-all</span>: stopped current runs":"resumed workers");render();},
+  archive:function(){var n=0;tasks.forEach(function(t){if(t.col==="done"&&!t.archived){t.archived=true;n++;}});toast(n?"Archived "+n+" done task(s)":"Nothing to archive");if(n)pushFeed("orchestrator","archived "+n+" done task(s)");if(!state.showArch&&!visible().some(function(t){return t.id===state.sel;}))state.sel=ordered()[0].id;render();},
+  showArch:function(){state.showArch=!state.showArch;$("#bShowArch").setAttribute("aria-pressed",String(state.showArch));if(!state.showArch){var s=byId(state.sel);if(s&&s.archived)state.sel=ordered()[0].id;}render();},
+  theme:function(){state.theme=state.theme==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",state.theme);$("#themeName").textContent=state.theme==="dark"?"phosphor":"paper";},
+  yes:function(){var t=selectedPending();if(t)answer(t.id,true);else toast("No pending approvals",true);},
+  no:function(){var t=selectedPending();if(t)answer(t.id,false);else toast("No pending approvals",true);},
+  feed:function(){$("#feedWrap").focus();},
+  help:function(){toast("j/k move, h/l lane, enter open, y/n approve, / commands, c new, p pause, t theme");}
+};
+$("#bNew").onclick=A.newTask;$("#bPause").onclick=A.pause;$("#bArchive").onclick=A.archive;$("#bShowArch").onclick=A.showArch;$("#bTheme").onclick=A.theme;
+
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-act]");if(b){answer(b.dataset.id,b.dataset.act==="yes");return;}
+  var o=e.target.closest("[data-open]");if(o){openTask(o.dataset.open);return;}
+  if(e.target.closest("#closeD")){$("#detail").classList.remove("open");var c=document.querySelector('[data-open="'+state.sel+'"]');if(c)c.focus();}
+});
+
+/* tooltip */
+var tip=$("#tip");
+function showTip(el){tip.innerHTML=el.getAttribute("data-tip");var r=el.getBoundingClientRect();tip.classList.add("on");var tw=tip.offsetWidth,th=tip.offsetHeight;var x=Math.min(Math.max(8,r.left),window.innerWidth-tw-8),y=r.top-th-8;if(y<8)y=r.bottom+8;tip.style.left=x+"px";tip.style.top=y+"px";}
+function hideTip(){tip.classList.remove("on");}
+document.addEventListener("mouseover",function(e){var m=e.target.closest("[data-tip]");if(m)showTip(m);});
+document.addEventListener("mouseout",function(e){var m=e.target.closest("[data-tip]");if(m&&!m.contains(e.relatedTarget))hideTip();});
+document.addEventListener("focusin",function(e){var m=e.target.closest&&e.target.closest("[data-tip]");if(m)showTip(m);else hideTip();});
+window.addEventListener("scroll",hideTip,true);
+
+/* command palette */
+var CMDS=[
+  ["task","New task","c",A.newTask],["board","Pause / resume all workers","p",A.pause],["board","Archive done tasks","A",A.archive],
+  ["view","Toggle show archived",".",A.showArch],["view","Toggle theme (phosphor / paper)","t",A.theme],
+  ["approve","Approve pending request (Fern, #04028acf)","y",A.yes],["approve","Reject pending request (Fern, #04028acf)","n",A.no],
+  ["view","Focus activity feed","f",A.feed],["help","Keyboard shortcuts","?",A.help]
+];
+tasks.forEach(function(t){CMDS.push(["open","Open #"+t.id+"  "+t.title,"",function(){if(t.archived&&!state.showArch)A.showArch();openTask(t.id);}]);});
+var pal={on:false,items:[],i:0,last:null};
+function palRender(){var q=$("#palIn").value.toLowerCase().trim();pal.items=CMDS.filter(function(c){return !q||(c[0]+" "+c[1]).toLowerCase().indexOf(q)>-1;});if(pal.i>=pal.items.length)pal.i=0;
+  var ul=$("#palList");if(!pal.items.length){ul.innerHTML='<li class="empty" role="option" aria-disabled="true">no matching command</li>';$("#palIn").removeAttribute("aria-activedescendant");return;}
+  ul.innerHTML=pal.items.map(function(c,i){return '<li role="option" id="po'+i+'" data-pi="'+i+'" aria-selected="'+(i===pal.i)+'"><span><span class="grp">'+c[0]+'</span>'+esc(c[1])+'</span>'+(c[2]?'<kbd>'+esc(c[2])+'</kbd>':'')+'</li>';}).join("");
+  $("#palIn").setAttribute("aria-activedescendant","po"+pal.i);var s=document.getElementById("po"+pal.i);if(s)s.scrollIntoView({block:"nearest"});}
+function palOpen(){pal.last=document.activeElement;pal.on=true;pal.i=0;$("#palIn").value="";$("#scrim").classList.add("on");$("#mode").textContent="COMMAND";palRender();$("#palIn").focus();}
+function palClose(){pal.on=false;$("#scrim").classList.remove("on");$("#mode").textContent="NORMAL";if(pal.last&&pal.last.focus)pal.last.focus();}
+function palRun(i){var c=pal.items[i];if(!c)return;palClose();c[3]();}
+$("#palIn").addEventListener("input",function(){pal.i=0;palRender();});
+$("#palList").addEventListener("click",function(e){var li=e.target.closest("[data-pi]");if(li)palRun(+li.dataset.pi);});
+$("#scrim").addEventListener("mousedown",function(e){if(e.target===this)palClose();});
+
+/* keyboard */
+function move(d){var o=ordered(),i=o.findIndex(function(t){return t.id===state.sel;});i=Math.max(0,Math.min(o.length-1,i+d));state.sel=o[i].id;renderBoard();focusSel();}
+function lane(d){var s=byId(state.sel),ci=COLS.findIndex(function(c){return c[0]===s.col;}),v=visible();
+  for(var k=ci+d;k>=0&&k<COLS.length;k+=d){var l=v.filter(function(t){return t.col===COLS[k][0];});if(l.length){state.sel=l[0].id;break;}}renderBoard();focusSel();}
+function focusSel(){var b=document.querySelector('[data-open="'+state.sel+'"]');if(b){b.focus({preventScroll:true});b.closest(".card").scrollIntoView({block:"nearest",inline:"nearest"});}}
+document.addEventListener("keydown",function(e){
+  if(pal.on){
+    if(e.key==="Escape"){e.preventDefault();palClose();}
+    else if(e.key==="ArrowDown"||(e.ctrlKey&&e.key==="n")){e.preventDefault();pal.i=(pal.i+1)%Math.max(1,pal.items.length);palRender();}
+    else if(e.key==="ArrowUp"||(e.ctrlKey&&e.key==="p")){e.preventDefault();pal.i=(pal.i-1+pal.items.length)%Math.max(1,pal.items.length);palRender();}
+    else if(e.key==="Enter"){e.preventDefault();palRun(pal.i);}
+    else if(e.key==="Tab"){e.preventDefault();}
+    return;
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();palOpen();return;}
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var tg=e.target.tagName;if(tg==="INPUT"||tg==="TEXTAREA")return;
+  var k=e.key;
+  if(k==="/"){e.preventDefault();palOpen();}
+  else if(k==="j"||k==="ArrowDown"&&e.target.closest&&e.target.closest("#board")){e.preventDefault();move(1);}
+  else if(k==="k"||k==="ArrowUp"&&e.target.closest&&e.target.closest("#board")){e.preventDefault();move(-1);}
+  else if(k==="h"){lane(-1);} else if(k==="l"){lane(1);}
+  else if(k==="Enter"&&!(e.target.closest&&e.target.closest("button,[data-tip]"))){e.preventDefault();openTask(state.sel);}
+  else if(k==="y"){A.yes();} else if(k==="n"){A.no();}
+  else if(k==="c"){A.newTask();} else if(k==="p"){A.pause();} else if(k==="A"){A.archive();}
+  else if(k==="."){A.showArch();} else if(k==="t"){A.theme();} else if(k==="f"){A.feed();} else if(k==="?"){A.help();}
+  else if(k==="Escape"){var d=$("#detail");if(d.classList.contains("open")){d.classList.remove("open");focusSel();}}
+});
+
+/* mock live ticks */
+var ticks=[
+  ["Fern/operator","heartbeat <span class=c>7b1e93d2</span> &middot; backoff test 4/6 green"],
+  ["Wade/reviewer","comment on <span class=c>a91c0f44</span>: points math matches weights"],
+  ["Uma/tester","exit 0 &middot; vitest run readme-invariants"],
+  ["orchestrator","lease renewed &middot; <span class=c>9f61c3ab</span> Uma/tester"]
+],ti=0;
+setInterval(function(){if(state.paused)return;var t=ticks[ti++%ticks.length];pushFeed(t[0],t[1]);$("#liveTxt").textContent="LIVE sse://127.0.0.1:7420 \u00b7 "+(9+Math.floor(Math.random()*14))+"ms";},7000);
+
+render();renderFeed(false);
+})();
+</script>
+</body>
+</html>
