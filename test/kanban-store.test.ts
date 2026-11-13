@@ -18,6 +18,19 @@ function reviewerDone(id: string) { const lease = testerDone(id); store.evaluate
 beforeEach(() => { root = mkdtempSync(join(tmpdir(), "pi-kanban-store-")); cwd = join(root, "project"); mkdirSync(cwd); store = new KanbanStore(cwd, join(root, "state")); });
 afterEach(() => { vi.restoreAllMocks(); rmSync(root, { recursive: true, force: true }); });
 describe("persistent project Kanban", () => {
+  it("keeps a reported waiting_user reason instead of a generic handoff error", () => {
+    const t = create(), lease = ready(t.id), task = current(t.id);
+    store.change(b => { const x = store.task(b, t.id); store.status(x, task.workers!.operator!, "waiting_user", "Approve settings change"); });
+    store.release(t.id, lease, "Agent ended without a valid handoff.", true);
+    const after = current(t.id);
+    expect(after.blocked).toBe("Waiting for user: Approve settings change");
+    expect(after.workerStatus?.state).toBe("waiting_user");
+    store = new KanbanStore(cwd, join(root, "state-generic"));
+    const other = create(), otherLease = ready(other.id);
+    store.release(other.id, otherLease, "Agent ended without a valid handoff.", true);
+    expect(current(other.id).blocked).toBe("Agent ended without a valid handoff.");
+    expect(current(other.id).workerStatus?.state).toBe("error");
+  });
   it("resumes a stopped tester without resetting its revision or evidence", () => {
     const t = create(), lease = operatorDone(t.id);
     evidence(t.id, lease);

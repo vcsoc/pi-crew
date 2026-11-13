@@ -457,7 +457,10 @@ export class KanbanStore {
         t.runs = Math.max(0, t.runs - 1);
         this.audit(t, "system", "unused worker run returned", { token: lease.token });
       }
-      this.status(t, this.workerIdentity(b, t, lease.role), error ? "error" : "finished", error ?? "Worker finished");
+      const identity = this.workerIdentity(b, t, lease.role), reported = t.workerStatus;
+      // A worker that explicitly reported waiting_user ended its turn correctly: surface its reason, not a generic handoff error.
+      if (error && !t.blocked && reported?.state === "waiting_user" && reported.identity.id === identity.id && reported.reason) error = `Waiting for user: ${reported.reason}`;
+      this.status(t, identity, error ? (error.startsWith("Waiting for user: ") ? "waiting_user" : "error") : "finished", error ?? "Worker finished");
       t.lease = undefined;
       this.audit(t, lease.role, "worker released");
       if (error) { t.blocked = error; this.audit(t, lease.role, "worker stopped", error); }
