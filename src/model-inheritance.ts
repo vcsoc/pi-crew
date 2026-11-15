@@ -11,12 +11,12 @@ export function setParentModelInheritance(enabled: boolean): void { inheritParen
 
 const modelParamShape = {
   model: Type.Optional(Type.String({
-    description: 'Choose a configured Pi model by "provider/modelId" or short name. Omit to use the agent\'s default, normally the parent model. An agent-file model takes priority.',
+    description: 'When the user explicitly requests a subagent model, pass its configured "provider/modelId" or short name here. This overrides parent model inheritance and agent-file defaults. Omit otherwise.',
   })),
 };
 
 export function modelParam(): Partial<typeof modelParamShape> {
-  return inheritParentModel ? {} : modelParamShape;
+  return modelParamShape;
 }
 
 export function requireParentModel(parent: Model<any> | undefined): Model<any> {

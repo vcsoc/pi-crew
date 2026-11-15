@@ -80,7 +80,7 @@ describe("cross-extension RPC", () => {
   // --- spawn ---
 
   describe("spawn RPC", () => {
-    it("ignores stale RPC model overrides when parent inheritance is locked", async () => {
+    it("rejects an explicit RPC model when the registry is unavailable", async () => {
       setParentModelInheritance(true);
       try {
         registerRpcHandlers(deps);
@@ -90,8 +90,8 @@ describe("cross-extension RPC", () => {
           requestId: "locked", type: "operate", prompt: "test", options: { model: "openai-codex/gpt-5.3-codex" },
         });
         await vi.waitFor(() => expect(reply).toHaveBeenCalled());
-        expect(reply).toHaveBeenCalledWith({ success: true, data: { id: "agent-42" } });
-        expect(manager.spawn).toHaveBeenCalledWith(deps.pi, ctx, "operate", "test", { model: undefined });
+        expect(reply).toHaveBeenCalledWith({ success: false, error: expect.stringContaining("modelRegistry is unavailable") });
+        expect(manager.spawn).not.toHaveBeenCalled();
       } finally {
         setParentModelInheritance(false);
       }

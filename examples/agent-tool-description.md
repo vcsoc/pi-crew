@@ -24,7 +24,7 @@ If the target is already known, use a direct tool — `read` for a known path, `
 - Use steer_subagent to send mid-run messages to a running background agent.
 - Clearly tell the agent whether you expect it to write code or just to do research (search, file reads, etc.), since it is not aware of the user's intent.
 - If an agent's description says it should be used proactively, try to use it without the user having to ask for it first.
-- Use model to choose a configured Pi model ("provider/modelId" or a short name). Omit it to use the agent's default, which normally inherits the parent model.
+- If the user explicitly requests a model for subagents, pass it in model (provider/modelId or short name); it overrides inheritance and agent-file defaults. Otherwise omit model. Resumes cannot change model via this parameter; the inheritance setting still applies.
 - Use thinking to control extended thinking level.
 - Use inherit_context if the agent needs the parent conversation history.{{isolationGuideline}}{{scheduleGuideline}}
 

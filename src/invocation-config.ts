@@ -136,13 +136,9 @@ export function resolveAgentInvocationConfig(
   const configuredModel = normalizeModel(agentConfig?.model);
   const requestedModel = normalizeModel(params.model);
   const locked = isParentModelInheritanceEnabled();
-  const overriddenModel = requestedModel && (locked || (configuredModel != null && configuredModel !== requestedModel))
-    ? requestedModel
-    : undefined;
-
   return {
-    modelInput: locked ? undefined : configuredModel ?? requestedModel,
-    modelFromParams: !locked && configuredModel == null && requestedModel != null,
+    modelInput: requestedModel ?? (locked ? undefined : configuredModel),
+    modelFromParams: requestedModel != null,
     thinking: (agentConfig?.thinking ?? params.thinking) as ThinkingLevel | undefined,
     maxTurns: agentConfig?.maxTurns ?? params.max_turns,
     inheritContext: agentConfig?.inheritContext ?? params.inherit_context ?? false,
@@ -152,9 +148,7 @@ export function resolveAgentInvocationConfig(
     // Undefined rather than an empty object when nothing was overridden: callers
     // spread this into the invocation snapshot, and an always-present key would
     // put `requestedThinking: undefined` on every record.
-    overridden: overriddenThinking || overriddenModel
-      ? { thinking: overriddenThinking, model: overriddenModel }
-      : undefined,
+    overridden: overriddenThinking ? { thinking: overriddenThinking } : undefined,
   };
 }
 

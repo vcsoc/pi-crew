@@ -39,21 +39,32 @@ afterEach(async () => {
 });
 
 describe("locked Agent tool", () => {
-  it("omits model overrides from the real registered schema", () => {
+  it("exposes model overrides in the real registered schema", () => {
     const tool = boot.tools.get("Agent");
-    expect(tool.parameters.properties).not.toHaveProperty("model");
-    expect(tool.description).toContain("Model overrides are disabled");
+    expect(tool.parameters.properties).toHaveProperty("model");
+    expect(tool.description).toContain("If the user explicitly requests a model");
   });
 
-  it("ignores a stale explicit override before registry resolution", async () => {
+  it("passes a requested model through to the runner when inheritance is enabled", async () => {
+    const requested = { provider: "openai-codex", id: "gpt-5.3-codex" };
+    context.modelRegistry.find.mockReturnValue(requested);
+    context.modelRegistry.getAvailable.mockReturnValue([requested]);
+    const result = await boot.tools.get("Agent").execute("spawn", {
+      prompt: "test", description: "Test override", subagent_type: "operate",
+      model: "openai-codex/gpt-5.3-codex", run_in_background: false,
+    }, undefined, undefined, context);
+    expect(textOf(result)).toContain("done");
+    expect(vi.mocked(runAgent).mock.calls[0][3].model).toBe(requested);
+  });
+
+  it("rejects an unavailable explicit override instead of silently inheriting", async () => {
     const tool = boot.tools.get("Agent");
     const result = await tool.execute("spawn", {
       prompt: "test", description: "Test inheritance", subagent_type: "operate",
       model: "gpt-5.3-codex", run_in_background: false,
     }, undefined, undefined, context);
-    expect(textOf(result)).toContain("done");
-    expect(context.modelRegistry.find).not.toHaveBeenCalled();
-    expect(vi.mocked(runAgent).mock.calls[0][3].model).toBe(parent);
+    expect(textOf(result)).toContain("Model not found");
+    expect(vi.mocked(runAgent)).not.toHaveBeenCalled();
   });
 
   it.each([false, true])("forwards the current parent to resumes (background=%s)", async (background) => {

@@ -193,4 +193,4 @@ If what you want is many coordinated agents rather than one, hand a script to [`
 
 ### Parent-model lock
 
-When `inheritParentModel: true` is enabled in pi-agents settings, spawn `options.model` is ignored before model resolution or scope validation. The shared runner uses the active parent's exact provider/model, including object-valued or stale model overrides from another extension. This is an opt-in policy, not a protocol-version change; the successful spawn reply remains an agent id. A missing active parent model produces an error rather than falling back to another provider.
+When `inheritParentModel: true` is enabled, explicit spawn `options.model` still takes precedence over the parent model and is resolved and scope-checked. Without an override, the parent model is used.

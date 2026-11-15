@@ -21,7 +21,6 @@ import { nanoid } from "nanoid";
 import type { AgentManager } from "./agent-manager.js";
 import { normalizeMaxTurns } from "./agent-runner.js";
 import { resolveSpawnType } from "./agent-types.js";
-import { isParentModelInheritanceEnabled } from "./model-inheritance.js";
 import { resolveModel } from "./model-resolver.js";
 import type { ScheduleStore } from "./schedule-store.js";
 import type { IsolationMode, ScheduledSubagent, SubagentType, ThinkingLevel } from "./types.js";
@@ -230,17 +229,15 @@ export class SubagentScheduler {
 
     store.update(id, { lastStatus: "running" });
 
-    // Resolve model at fire time — registry contents may have changed since the
-    // job was created (auth added/removed). Fall back silently to spawn-default
-    // if resolution fails; the spawn path handles undefined model gracefully.
-    let resolvedModel: any | undefined;
-    if (job.model && !isParentModelInheritanceEnabled()) {
-      const r = resolveModel(job.model, ctx.modelRegistry);
-      if (typeof r !== "string") resolvedModel = r;
-    }
-
     let agentId: string;
     try {
+      // A scheduled explicit model must not silently fall back if it disappears.
+      let resolvedModel: any | undefined;
+      if (job.model) {
+        const result = resolveModel(job.model, ctx.modelRegistry);
+        if (typeof result === "string") throw new Error(result);
+        resolvedModel = result;
+      }
       // Re-resolve at fire time against the registry as it stands. This does not
       // reload from disk (the scheduler has no reason to rebuild process-global
       // state from a timer), so it catches changes that went through /crew or

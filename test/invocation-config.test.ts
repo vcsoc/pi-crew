@@ -41,8 +41,8 @@ describe("resolveAgentInvocationConfig", () => {
       },
     );
 
-    expect(resolved.modelInput).toBe("provider/config-model");
-    expect(resolved.modelFromParams).toBe(false);
+    expect(resolved.modelInput).toBe("provider/param-model");
+    expect(resolved.modelFromParams).toBe(true);
     expect(resolved.thinking).toBe("high");
     expect(resolved.maxTurns).toBe(42);
     expect(resolved.inheritContext).toBe(false);
@@ -156,7 +156,7 @@ describe("resolveAgentInvocationConfig — overridden params (#182)", () => {
       { model: "provider/param-model", thinking: "max" },
     );
 
-    expect(resolved.overridden).toEqual({ thinking: "max", model: "provider/param-model" });
+    expect(resolved.overridden).toEqual({ thinking: "max" });
   });
 
   it("records nothing when the caller got what they asked for", () => {

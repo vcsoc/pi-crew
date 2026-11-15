@@ -13,19 +13,19 @@ const rejected = { provider: "openai-codex", id: "gpt-5.3-codex" } as any;
 afterEach(() => setParentModelInheritance(false));
 
 describe("parent provider/model lock", () => {
-  it("removes the override from the model-facing schema", () => {
+  it("exposes explicit model selection even with inheritance enabled", () => {
     expect(modelParam()).toHaveProperty("model");
     setParentModelInheritance(true);
-    expect(modelParam()).not.toHaveProperty("model");
+    expect(modelParam()).toHaveProperty("model");
   });
 
-  it("ignores both tool-call and agent-file pins instead of resolving them", () => {
+  it("honors an explicit tool-call model above inheritance and agent pins", () => {
     setParentModelInheritance(true);
     for (const config of [undefined, { model: "openai-codex/gpt-5.3-codex" }]) {
       const result = resolveAgentInvocationConfig(config as any, { model: "gpt-5.3-codex" });
-      expect(result.modelInput).toBeUndefined();
-      expect(result.modelFromParams).toBe(false);
-      expect(result.overridden?.model).toBe("gpt-5.3-codex");
+      expect(result.modelInput).toBe("gpt-5.3-codex");
+      expect(result.modelFromParams).toBe(true);
+      expect(result.overridden?.model).toBeUndefined();
     }
   });
 
@@ -35,7 +35,7 @@ describe("parent provider/model lock", () => {
 
   it("retains normal override precedence when unlocked", () => {
     expect(resolveAgentInvocationConfig(undefined, { model: "explicit" }).modelInput).toBe("explicit");
-    expect(resolveAgentInvocationConfig({ model: "pinned" } as any, { model: "explicit" }).modelInput).toBe("pinned");
+    expect(resolveAgentInvocationConfig({ model: "pinned" } as any, { model: "explicit" }).modelInput).toBe("explicit");
   });
 
   it("repairs the exact failed provider/model on resume", async () => {
@@ -79,7 +79,7 @@ describe("parent provider/model lock", () => {
   it("applies the persisted setting in both directions", () => {
     const apply = vi.fn(setParentModelInheritance);
     applySettings({ inheritParentModel: true }, { setInheritParentModel: apply } as any);
-    expect(modelParam()).not.toHaveProperty("model");
+    expect(modelParam()).toHaveProperty("model");
     applySettings({ inheritParentModel: false }, { setInheritParentModel: apply } as any);
     expect(modelParam()).toHaveProperty("model");
   });

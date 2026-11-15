@@ -117,14 +117,14 @@ describe("SubagentScheduler — lifecycle", () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
-  it("ignores a saved job's model when the parent lock is enabled", async () => {
+  it("fails a saved job with an unavailable explicit model even with inheritance enabled", async () => {
     vi.useFakeTimers();
     setParentModelInheritance(true);
     try {
       scheduler.addJob({ name: "locked", description: "test", prompt: "test", subagent_type: "operate", schedule: "+1s", model: "gpt-5.3-codex" });
       await vi.advanceTimersByTimeAsync(1100);
       expect(ctx.modelRegistry.find).not.toHaveBeenCalled();
-      expect(manager.spawn).toHaveBeenCalledWith(pi, ctx, "operate", "test", expect.objectContaining({ model: undefined }));
+      expect(manager.spawn).not.toHaveBeenCalled();
     } finally {
       setParentModelInheritance(false);
       vi.useRealTimers();

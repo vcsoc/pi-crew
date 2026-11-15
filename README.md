@@ -552,7 +552,7 @@ Launch a sub-agent.
 | `inherit_context` | boolean | no | Copy the main conversation into the agent. Default: false. |
 | `schedule` | string | no | Start later or repeat: `+10m`, `1h`, an ISO timestamp, or a six-field cron expression. Not offered when scheduling is disabled. See [Scheduling](#scheduling) for restrictions. |
 
-An explicit option in the agent file takes priority over the corresponding tool parameter. A fresh agent needs a self-contained task unless you choose to share context.
+Agent-file options take priority over corresponding tool parameters, except an explicit model parameter takes priority over the agent-file model. A fresh agent needs a self-contained task unless you choose to share context.
 
 ### `SubagentWorkflow`
 
@@ -739,7 +739,7 @@ When on, each subagent spawn's effective model is validated against pi's own `en
 | Pinned in agent frontmatter | Warning toast + the pinned model runs (frontmatter is authoritative) |
 | Parent-inherited (neither set) | Warning toast + parent's model runs |
 
-**Design:** `scopeModels` is a guardrail against the orchestrator picking unexpected models at runtime, not a hard policy against user-level config. The "frontmatter is authoritative" guarantee from v0.5.1 still holds for `model:` — caller params can't override frontmatter, and frontmatter pins run even when out of scope (with a visible warning).
+**Design:** `scopeModels` is a guardrail against the orchestrator picking unexpected models at runtime, not a hard policy against user-level config. Explicit caller model parameters override frontmatter; frontmatter pins run even when out of scope (with a visible warning).
 
 **Nested spawns** ([nested subagents](#nested-subagents)) apply the same table against the parent's config root. The hard-error case is identical; the warning cases proceed silently, since a subagent session has no UI to toast to.
 
@@ -767,7 +767,7 @@ Most changes apply to new agents immediately. Options that change which tools or
 | `workflowsEnabled` | auto/on | Allow scripted workflows. Unset: step aside if another workflow tool exists. Explicit `true` or `false` fixes your choice. Applies next session; active runs continue. |
 | `packageAgents` | `true` | Load agents declared by installed packages. `false` loads none; a list limits which packages may contribute. |
 | `packageWorkflows` | `true` | The same choice for package workflow scripts. Separate because workflows execute JavaScript. |
-| `inheritParentModel` | `false` | Lock fresh agents and resumes to the current parent provider/model. Ignore tool, agent-file, workflow, RPC and scheduled model overrides; hide the Agent model parameter after reload. |
+| `inheritParentModel` | `false` | Default fresh agents and resumes to the parent provider/model; explicit model parameters override this default. Agent-file model pins are ignored while enabled. |
 | `scopeModels` | `false` | Check model overrides against `/scoped-models`. Tool overrides outside the list are rejected; file pins and the parent model only warn. An empty list skips checks. |
 | `strictAgentFiles` | `false` | Fail startup for broken local agent files instead of skipping them with a warning. Mid-session reloads still warn; package files are not covered. |
 | `disableDefaultAgents` | `false` | Hide built-in types. Your custom definitions remain. The tool's type list updates next session. |
@@ -1138,6 +1138,6 @@ To prevent an orchestrator from accidentally choosing a different provider or un
 { "inheritParentModel": true }
 ```
 
-The same option is available in `/crew` → Settings → **Inherit parent model**. Reload Pi after changing it to refresh tool schemas. Runtime enforcement also protects calls made through an older schema. With the lock enabled, even a populated `model` argument or agent-file model pin cannot redirect a child. Workflow, nested, scheduled and cross-extension spawns use the same runner guard. Resumes switch an existing child back to the current parent's provider/model before prompting, including retries of failed sessions. Changing the main Pi model therefore changes the model inherited on the next spawn or resume. A missing parent model fails closed instead of selecting another provider.
+The same option is available in `/crew` → Settings → **Inherit parent model**. Reload Pi after changing it to refresh tool schemas. Runtime enforcement also protects calls made through an older schema. With the setting enabled, agent-file model pins do not redirect a child, but an explicit `model` argument overrides the parent for fresh Agent, workflow, nested, scheduled and cross-extension spawns. Resumes switch an existing child back to the current parent's provider/model before prompting, including retries of failed sessions. Changing the main Pi model therefore changes the model inherited on the next spawn or resume. A missing parent model fails closed when no explicit spawn model is supplied.
 
-The lock is opt-in to preserve deliberately mixed-model setups. `scopeModels` remains a separate allowlist policy; it does not imply provider/model inheritance. With the lock off, existing override precedence remains unchanged. Empty, `default`, `inherit` and `parent` model fillers on Agent calls mean no override, not a fuzzy model search. This prevents model-selection mistakes, not provider outages, account restrictions on the parent's own model, or every possible API error.
+The lock is opt-in to preserve deliberately mixed-model setups. `scopeModels` remains a separate allowlist policy; it does not imply provider/model inheritance. An explicit model argument takes precedence over an agent-file pin even with the setting off. Empty, `default`, `inherit` and `parent` model fillers on Agent calls mean no override, not a fuzzy model search. This prevents model-selection mistakes, not provider outages, account restrictions on the parent's own model, or every possible API error.

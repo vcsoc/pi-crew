@@ -232,7 +232,7 @@ describe("Agent tool result — effective model", () => {
     expect(result.details.tags).toContain("thinking: low (asked max)");
   });
 
-  it("discloses a model an agent file pinned over the caller's (#182)", async () => {
+  it("honors the caller model over an agent file pin", async () => {
     pinnedAgent("model: anthropic/claude-haiku-4-5\n");
     const tool = agentTool();
     vi.mocked(runAgent).mockImplementation(() => new Promise(() => {}) as never);
@@ -251,7 +251,7 @@ describe("Agent tool result — effective model", () => {
       ctx(),
     );
 
-    expect(result.details.modelName).toBe("claude haiku 4.5 (asked anthropic/claude-opus-4-6)");
+    expect(result.details.modelName).toBe("claude opus 4.6");
   });
 
   it("stays quiet when the caller's spelling names the model that won", async () => {
@@ -273,7 +273,7 @@ describe("Agent tool result — effective model", () => {
     expect(result.details.modelName).toBe("claude haiku 4.5");
   });
 
-  it("discloses a spelling that names no available model at all", async () => {
+  it("rejects an unavailable requested model rather than using the pin", async () => {
     pinnedAgent("model: anthropic/claude-haiku-4-5\n");
     const tool = agentTool();
     vi.mocked(runAgent).mockImplementation(() => new Promise(() => {}) as never);
@@ -286,7 +286,7 @@ describe("Agent tool result — effective model", () => {
       ctx(),
     );
 
-    expect(result.details.modelName).toBe("claude haiku 4.5 (asked gpt-9)");
+    expect(JSON.stringify(result.content)).toContain("Model not found");
   });
 
   it("says nothing about a request that was honored", async () => {

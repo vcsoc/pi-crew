@@ -56,3 +56,9 @@
 - Fresh loadExtensions check using Pi loader imported the complete installed manifest entry src/index.ts with zero errors. Registered command list is exactly crew (no agents); version handler reports pi-crew v0.1.4 (loaded); all four native tools registered. No session lifecycle, agents or managed tasks were started.
 - Current live session has not been reloaded; user can run /reload, then /crew version, or restart with pi --continue if needed. This is direct publication/update evidence, not managed acceptance or parent recovery.
 - This outcome and matching index update are local post-publication memory changes; they are intentionally not a second source release.
+
+## 2026-11-13 20:33 EST Installation
+- Replaced global pi-agents package with https://github.com/vcsoc/pi-crew.git, tracking the public default branch rather than a local checkout. Installed HEAD df85fe44a497da6dcced239106fae7e4c508896f matches remote HEAD; pi list confirms replacement. Future updates use pi update https://github.com/vcsoc/pi-crew.git; reload current session to apply.
+
+## 2026-11-13 Model Selection
+- User requires explicit subagent model requests to override parent-model inheritance and agent-file defaults, and requests commit, push, and update the existing Git-installed package. Implemented explicit spawn precedence, model-facing guidance, scheduled/RPC/workflow support and rejection of unavailable explicit models; resume remains governed by existing inheritance behavior. Full suite: 145 files, 2854 passed, 7 skipped; subsequent focused tests, lint and typecheck pass.

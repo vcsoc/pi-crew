@@ -3042,13 +3042,13 @@ describe("locked parent-model execution", () => {
 
   afterEach(() => setParentModelInheritance(false));
 
-  it("passes the exact parent model to the SDK despite an explicit override", async () => {
+  it("passes the explicit model to the SDK despite inheritance", async () => {
     setParentModelInheritance(true);
     const { session: raw } = createSession("ok");
     const session = Object.assign(raw, { model: parent });
     createAgentSession.mockResolvedValue({ session });
     await runAgent({ ...ctx, model: parent }, "inspect", "go", { model: failed });
-    expect(createAgentSession.mock.calls[0][0].model).toBe(parent);
+    expect(createAgentSession.mock.calls[0][0].model).toBe(failed);
     expect(session.prompt).toHaveBeenCalledOnce();
   });
 

@@ -219,7 +219,7 @@ describe("the workflow host reports a child's effective configuration", () => {
 
 describe("workflow parent-model lock", () => {
   afterEach(() => setParentModelInheritance(false));
-  it("ignores a script override and agent pin without resolving either provider", async () => {
+  it("rejects an unavailable script override rather than inheriting", async () => {
     setParentModelInheritance(true);
     const parent = { provider: "waypoint-local", id: "gpt-6.1-sol" };
     registerAgents(new Map([["pinned", { name: "pinned", model: "openai-codex/gpt-5.3-codex" } as any]]));
@@ -227,10 +227,10 @@ describe("workflow parent-model lock", () => {
     const find = vi.fn();
     const manager = new AgentManager();
     const host = createWorkflowHost({ pi, manager, ctx: ctx({ model: parent, modelRegistry: { find, getAvailable: vi.fn(() => []) } }) });
+    const previousCalls = vi.mocked(runAgent).mock.calls.length;
     const result = await host.spawnAgent(spawnRequest({ agentType: "pinned", model: "gpt-5.3-codex" }));
-    expect(result.ok).toBe(true);
-    expect(find).not.toHaveBeenCalled();
-    expect(vi.mocked(runAgent).mock.calls.at(-1)?.[3].model).toBe(parent);
+    expect(result.ok).toBe(false);
+    expect(vi.mocked(runAgent)).toHaveBeenCalledTimes(previousCalls);
     manager.abortAll();
   });
 });

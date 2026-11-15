@@ -1001,9 +1001,9 @@ export async function runAgent(
   }
 
   // Resolve model: explicit option > config.model > parent model
-  const model = isParentModelInheritanceEnabled() ? requireParentModel(ctx.model) : options.model ?? resolveDefaultModel(
+  const model = options.model ?? (isParentModelInheritanceEnabled() ? requireParentModel(ctx.model) : resolveDefaultModel(
     ctx.model, ctx.modelRegistry, agentConfig?.model,
-  );
+  ));
 
   // Resolve thinking level: explicit option > agent config > undefined (inherit)
   const thinkingLevel = options.thinkingLevel ?? agentConfig?.thinking;
@@ -1219,7 +1219,7 @@ export async function runAgent(
   }
 
   if (options.kanban) bindKanbanGate(session, options.kanban);
-  await enforceParentSessionModel(session, ctx.model);
+  if (!options.model) await enforceParentSessionModel(session, ctx.model);
   options.onSessionCreated?.(session);
 
   const run = observeRun(session, { ...options, maxTurns: resolveEffectiveMaxTurns(type, options.maxTurns) });

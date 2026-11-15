@@ -204,7 +204,7 @@ export function createWorkflowHost(deps: WorkflowHostOptions): WorkflowHost {
       // back to the parent silently, because the script never asked for it.
       let model = ctx.model;
       const config = getAgentConfig(dispatch.type);
-      const modelInput = isParentModelInheritanceEnabled() ? undefined : request.model ?? config?.model;
+      const modelInput = request.model ?? (isParentModelInheritanceEnabled() ? undefined : config?.model);
       if (modelInput !== undefined) {
         const resolved = resolveModel(modelInput, ctx.modelRegistry);
         if (typeof resolved === "string") {
@@ -225,7 +225,7 @@ export function createWorkflowHost(deps: WorkflowHostOptions): WorkflowHost {
         model,
         cwd: ctx.cwd,
         modelRegistry: ctx.modelRegistry,
-        callerSupplied: !isParentModelInheritanceEnabled() && request.model !== undefined,
+        callerSupplied: request.model !== undefined,
         agentLabel: config?.displayName ?? dispatch.type,
         modelInput,
       });

@@ -14,7 +14,6 @@
  */
 
 import { isTopLevelAgent } from "./agent-manager.js";
-import { isParentModelInheritanceEnabled } from "./model-inheritance.js";
 import { type ModelRegistry, resolveModel } from "./model-resolver.js";
 import { checkModelScope } from "./model-scope.js";
 import type { AgentRecord } from "./types.js";
@@ -119,7 +118,7 @@ export function registerRpcHandlers(deps: RpcDeps): RpcHandle {
       // — same pattern the scheduler path already uses — so the spawned
       // agent's auth lookup doesn't crash with "No API key found for
       // undefined".
-      let normalizedOptions = isParentModelInheritanceEnabled() ? { ...options, model: undefined } : options ?? {};
+      let normalizedOptions = options ?? {};
       // `!= null` on purpose: a JSON-forwarding caller can serialize an unset
       // field as null, and the runner reads `options.model ?? default`, so null
       // means "inherit" — not an override to resolve or scope-check.

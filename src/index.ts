@@ -1827,6 +1827,7 @@ Notes:
 - Parallel work: one message, multiple Agent calls — they run concurrently.
 - Subagents run in the background by default; you'll be notified when one completes. Pass run_in_background: false only when your very next action depends on the result and nothing else could usefully happen while it runs. Never fabricate or predict a pending agent's results — if the user asks before the notification arrives, say it's still running.
 - The result is not shown to the user — summarize it for them. Verify an agent's claimed code changes before reporting work done.
+- Pass model for a user-requested subagent model; it overrides inheritance and agent defaults. Otherwise omit it. Resume model changes are unsupported.
 - resume continues a previous agent by ID; steer_subagent messages a running one.${isolationCompactGuideline}`;
 
   const fullAgentToolDescription = `Launch a new agent to handle complex, multi-step tasks autonomously. Each agent type has specific capabilities and tools available to it.
@@ -1855,7 +1856,7 @@ If the target is already known, use a direct tool — \`read\` for a known path,
 - Use steer_subagent to send mid-run messages to a running background agent.
 - Clearly tell the agent whether you expect it to write code or just to do research (search, file reads, etc.), since it is not aware of the user's intent.
 - If an agent's description says it should be used proactively, try to use it without the user having to ask for it first.
-${isParentModelInheritanceEnabled() ? "- Model overrides are disabled. Spawns and resumes inherit the current parent provider/model, including when retrying a failed agent." : '- Use model to choose a configured Pi model ("provider/modelId" or a short name). Omit it to use the agent\'s default, which normally inherits the parent model.'}
+- If the user explicitly requests a model for subagents, pass it in model (provider/modelId or short name); it overrides inheritance and agent-file defaults. Otherwise omit model. Resumes cannot change model via this parameter; the inheritance setting still applies.
 - Use thinking to control extended thinking level.
 - Use inherit_context if the agent needs the parent conversation history.${isolationGuideline}${scheduleGuideline}
 
@@ -2154,7 +2155,7 @@ Terse command-style prompts produce shallow, generic work.
         defaultRunInBackground: getBackgroundByDefault(),
       });
 
-      // Resolve model from agent config first; tool-call params only fill gaps.
+      // An explicit tool-call model takes precedence over agent defaults.
       let model = ctx.model;
       if (resolvedConfig.modelInput) {
         const resolved = resolveModel(resolvedConfig.modelInput, ctx.modelRegistry);
@@ -4059,7 +4060,7 @@ Write the file using the write tool. Only write the file, nothing else.`;
         {
           id: "inheritParentModel",
           label: "Inherit parent model",
-          description: "Lock spawns and resumes to the current parent provider/model, ignoring tool, agent-file and workflow overrides. Reload Pi after toggling to update tool schemas.",
+          description: "Use the parent model by default, ignoring agent-file pins. Explicit spawn models still take precedence; resumes use the parent model.",
           currentValue: isParentModelInheritanceEnabled() ? "on" : "off",
           values: ["on", "off"],
         },
@@ -4265,7 +4266,7 @@ Write the file using the write tool. Only write the file, nothing else.`;
         }
       } else if (id === "inheritParentModel") {
         setParentModelInheritance(value === "on");
-        notifyApplied(ctx, `Parent-model inheritance ${value === "on" ? "locked" : "unlocked"}. Reload Pi to update tool schemas.`);
+        notifyApplied(ctx, `Parent-model inheritance ${value === "on" ? "enabled" : "disabled"}.`);
       } else if (id === "scopeModels") {
         const enabled = value === "on";
         setScopeModelsEnabled(enabled);
